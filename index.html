@@ -3424,8 +3424,7 @@ function joinScreen(error) {
     h('h1', null, 'Join the table'),
     h('p', { class: 'hint' }, 'Enter the room code the GM shared with you.'),
     error ? h('p', { class: 'hint', style: { color: 'var(--danger)' } }, error) : null,
-    inp, h('button', { class: 'btn primary', onclick: go }, 'Join'),
-    h('button', { class: 'btn ghost small gm-door', style: { marginTop: '28px' }, onclick: () => { location.hash = 'gm'; location.reload(); } }, 'I’m the GM: open the console')));
+    inp, h('button', { class: 'btn primary', onclick: go }, 'Join')));
   inp.focus();
 }
 
