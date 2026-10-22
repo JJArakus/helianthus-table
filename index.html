@@ -385,6 +385,47 @@ details[open] > summary{margin-bottom:8px}
 .sb-text{margin-top:3px}
 .adv-lib{display:flex; flex-direction:column; gap:8px}
 
+/* ============================================================
+   MESSAGES (players and GM)
+   ============================================================ */
+.badge{display:inline-block; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--fear); color:#fff; font-size:12px; line-height:18px; text-align:center; font-family:var(--font-body)}
+.gm-nav .badge{margin-left:8px}
+.btn.on{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 16%, var(--panel))}
+.tag{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); border:1px solid var(--line); border-radius:10px; padding:1px 6px; margin-left:8px; font-weight:400; white-space:nowrap}
+.face.gm-face{--c:var(--accent); color:var(--accent-ink); font-size:12px; letter-spacing:.02em}
+.thread-list{display:flex; flex-direction:column; gap:6px}
+.thread-item{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; cursor:pointer; color:inherit; font:inherit}
+.thread-item:hover{border-color:color-mix(in srgb, var(--accent) 55%, var(--line))}
+.thread-item.cur{border-color:var(--accent)}
+.thread-item.unread .ti-title{font-weight:700; color:var(--ink)}
+.thread-item .faces{display:flex; flex:none; padding-right:8px}
+.thread-item .faces .face{width:30px; height:30px; font-size:12px; margin-right:-8px; box-shadow:0 0 0 2px var(--panel)}
+.ti-body{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.ti-title{display:flex; align-items:center; min-width:0}
+.ti-snip{color:var(--muted); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.ti-side{display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:none}
+.ti-side .when{font-size:12px; color:var(--muted)}
+.thread{display:flex; flex-direction:column; gap:8px}
+.bubble{max-width:85%; align-self:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:14px 14px 14px 4px; padding:8px 12px}
+.bubble.mine{align-self:flex-end; background:color-mix(in srgb, var(--accent) 16%, var(--panel)); border-color:color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius:14px 14px 4px 14px}
+.bubble.from-gm{border-color:var(--accent)}
+.bubble .who{font-size:13px; font-weight:600; color:var(--accent); margin-bottom:2px}
+.bubble .txt{white-space:pre-wrap; overflow-wrap:anywhere}
+.bubble .when{font-size:12px; color:var(--muted); margin-top:4px; display:flex; gap:12px; justify-content:flex-end}
+.linkish{background:none; border:0; padding:0; color:var(--muted); cursor:pointer; font:inherit; text-decoration:underline}
+.linkish.danger{color:var(--danger)}
+.composer{display:flex; flex-direction:column; gap:6px}
+.composer textarea{min-height:68px; resize:vertical; font-size:16px}
+.to-chips{display:flex; flex-wrap:wrap; gap:6px}
+.to-chip{display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:4px 13px 4px 4px; border:1px solid var(--line); border-radius:22px; background:var(--panel); color:inherit; font:inherit; font-size:15px; cursor:pointer}
+.to-chip .face{width:30px; height:30px; font-size:12px}
+.to-chip.on{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 16%, var(--panel))}
+.msg-layout{display:grid; grid-template-columns:minmax(240px,320px) minmax(0,1fr); gap:16px; margin-top:14px; align-items:start}
+.thread-pane .thread{max-height:55vh; overflow-y:auto; padding-right:4px}
+@media (max-width:900px){ .msg-layout{grid-template-columns:1fr} }
+.ti-title{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block}
+.ti-tag{font-size:12px; color:var(--accent); letter-spacing:.02em}
+
 </style>
 </head>
 <body>
@@ -2937,6 +2978,8 @@ function defaultState() {
     adversaries: { library: seedAdversaries(), active: [] },
     handouts: [], reveal: null,
     messages: [],
+    msgOpts: { playersSend: true, playerToPlayer: true },
+    msgRead: {},
   };
 }
 /* Fill in anything a newer version added, so older saves keep working. */
@@ -2946,6 +2989,8 @@ function migrateState(st) {
   st.modules = { ...d.modules, ...st.modules };
   st.theme = { ...defaultTheme(), ...st.theme, c: { ...defaultTheme().c, ...(st.theme && st.theme.c) } };
   st.fear = { ...d.fear, ...st.fear };
+  st.msgOpts = { ...d.msgOpts, ...st.msgOpts };
+  for (const m of st.messages) if (!m.from) m.from = 'gm';
   st.adversaries = { library: (st.adversaries && st.adversaries.library) || d.adversaries.library, active: (st.adversaries && st.adversaries.active) || [] };
   st.schema = APP.schema;
   return st;
@@ -3024,6 +3069,75 @@ function faceEl(ch, extra = {}) {
     style: { '--c': (ch && ch.color) || '#888', backgroundImage: img ? `url("${img}")` : null },
   }, img ? '' : initials(ch && (ch.label || ch.name)));
 }
+/* ---------- messaging: conversations are keyed by who is in them ---------- */
+const MSG_MAX = 1000;
+const msgParts = (m) => [...new Set([m.from || 'gm', ...(m.to || [])])].sort();
+const threadKey = (parts) => parts.slice().sort().join('|');
+function threadsOf(messages) {
+  const map = new Map();
+  for (const m of messages || []) {
+    const parts = msgParts(m), k = threadKey(parts);
+    if (!map.has(k)) map.set(k, { key: k, parts, msgs: [] });
+    map.get(k).msgs.push(m);
+  }
+  const out = [...map.values()];
+  for (const t of out) { t.msgs.sort((a, b) => a.at - b.at); t.last = t.msgs[t.msgs.length - 1]; }
+  return out.sort((a, b) => b.last.at - a.last.at);
+}
+function whoName(id, roster) {
+  if (id === 'gm') return 'GM';
+  const r = (roster || []).find((x) => x.id === id);
+  return r ? r.name : 'A former player';
+}
+function whoFace(id, roster) {
+  if (id === 'gm') return h('span', { class: 'face gm-face', 'aria-hidden': 'true' }, 'GM');
+  return faceEl((roster || []).find((x) => x.id === id) || { name: '?' });
+}
+/* Title from one viewer's point of view ("me" is a player id or 'gm'). */
+function threadTitle(parts, me, roster) {
+  const others = parts.filter((p) => p !== me).sort((a, b) => (a === 'gm' ? -1 : b === 'gm' ? 1 : 0));
+  const players = (roster || []).map((r) => r.id).filter((id) => id !== me);
+  const withGM = me === 'gm' || others.includes('gm');
+  if (withGM && players.length > 1 && players.every((id) => parts.includes(id))) return 'Everyone';
+  if (!others.length) return 'Just you';
+  return others.map((id) => whoName(id, roster)).join(', ');
+}
+function threadEl(t, me, roster, opts = {}) {
+  const list = h('div', { class: 'thread' }, t.msgs.map((m) => {
+    const from = m.from || 'gm', mine = from === me;
+    return h('div', { class: 'bubble' + (mine ? ' mine' : '') + (from === 'gm' && me !== 'gm' ? ' from-gm' : '') },
+      mine ? null : h('div', { class: 'who' }, whoName(from, roster)),
+      h('div', { class: 'txt' }, m.text),
+      h('div', { class: 'when' }, m.pending ? 'Sending…' : fmtTime(m.at),
+        opts.onDelete ? h('button', { class: 'linkish danger', onclick: () => opts.onDelete(m) }, 'Delete') : null));
+  }));
+  return list;
+}
+/* A reply box. Its text lives in `drafts[key]` so a re-render never loses it. */
+function composerEl({ key, drafts, placeholder, onSend, disabled, note }) {
+  const ta = h('textarea', { 'data-keep': 'compose:' + key, 'aria-label': 'Message', placeholder: placeholder || 'Write a message', maxlength: String(MSG_MAX), rows: '2' });
+  ta.value = drafts[key] || '';
+  const btn = h('button', { class: 'btn primary' }, 'Send');
+  const sync = () => { btn.disabled = !!disabled || !ta.value.trim(); };
+  const go = () => { const t = ta.value.trim(); if (!t || disabled) return; drafts[key] = ''; ta.value = ''; sync(); onSend(t); };
+  ta.addEventListener('input', () => { drafts[key] = ta.value; sync(); });
+  ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } });
+  btn.addEventListener('click', go);
+  sync();
+  return h('div', { class: 'composer' }, ta, h('div', { class: 'row', style: { justifyContent: 'space-between', flexWrap: 'nowrap' } },
+    h('span', { class: 'small-text muted' }, note || ''), btn));
+}
+/* Re-render without knocking someone out of the box they're typing in. */
+function keepFocus(render) {
+  const a = document.activeElement;
+  const key = a && a.getAttribute && a.getAttribute('data-keep');
+  const sel = key && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null;
+  render();
+  if (!key) return;
+  const n = document.querySelector(`[data-keep="${CSS.escape(key)}"]`);
+  if (n && n !== a) { n.focus({ preventScroll: true }); if (sel) try { n.setSelectionRange(sel[0], sel[1]); } catch {} }
+}
+
 function hopePips(n) {
   return h('span', { class: 'hope-pips', title: `Hope ${n}` }, Array.from({ length: 6 }, (_, i) => h('i', { class: i < n ? 'on' : '' })));
 }
@@ -3180,8 +3294,8 @@ function collectAssetIds(obj, out = new Set()) {
 
 /* ============================================================
    Viewer: player devices, the table display, and GM preview.
-   Viewers never change campaign state; the only thing a player
-   writes is their own notebook.
+   Viewers never change campaign state; a player writes only their
+   own notebook and the messages they send.
    ============================================================ */
 
 /* Build the full viewer screen from a view object.
@@ -3204,7 +3318,7 @@ function viewerScreen(view, ctx) {
   const tabs = [['board', 'Board']];
   if (mode !== 'table') {
     if (view.handouts) tabs.push(['library', 'Library']);
-    if (view.messages) tabs.push(['inbox', 'Inbox']);
+    if (view.messages) tabs.push(['inbox', 'Messages']);
     if (view.notes) tabs.push(['notes', 'Notes']);
   }
   const tab = tabs.some(([k]) => k === ctx.tab) ? ctx.tab : 'board';
@@ -3231,11 +3345,13 @@ function viewerScreen(view, ctx) {
           h('span', { class: 't' }, ho.title || 'Untitled'));
       })) : h('p', { class: 'empty' }, 'Handouts the GM shares with you will collect here.')));
   } else if (tab === 'inbox') {
-    const list = (view.messages || []).slice().sort((a, b) => b.at - a.at);
-    const seen = new Set((ctx.seen && ctx.seen.msgs) || []);
-    body.append(h('section', { class: 'v-sec' }, h('h2', null, 'Inbox'),
-      list.length ? h('div', { class: 'stack' }, list.map((m) => h('div', { class: 'msg' + (seen.has(m.id) ? '' : ' unread') },
-        h('div', { class: 'when' }, fmtTime(m.at)), h('div', { class: 'txt' }, m.text)))) : h('p', { class: 'empty' }, 'Private messages from the GM will appear here.')));
+    if (ctx.messagesPanel) body.append(ctx.messagesPanel());
+    else { // GM preview: read-only
+      const threads = threadsOf(view.messages);
+      body.append(h('section', { class: 'v-sec' }, h('h2', null, 'Messages'),
+        threads.length ? h('div', { class: 'stack' }, threads.map((t) => h('div', { class: 'stack', style: { gap: '6px' } },
+          h('b', null, threadTitle(t.parts, view.me, view.roster)), threadEl(t, view.me, view.roster)))) : h('p', { class: 'empty' }, 'No messages yet.')));
+    }
   } else if (tab === 'notes') {
     body.append(ctx.notesPanel ? ctx.notesPanel() : h('p', { class: 'empty' }, 'The player’s notes appear here on their own device.'));
   }
@@ -3272,6 +3388,7 @@ const P = {
   peer: null, conn: null, status: 'wait', statusText: 'Connecting', retryMs: 1500, retryT: null,
   tab: 'board', seen: { msgs: [], reveal: 0 }, notebook: { pages: [] }, page: null,
   lastFear: null, assetWait: new Set(), revealOpen: false, msgOpen: false,
+  thread: null, composeTo: [], drafts: {}, pending: [], notified: new Set(),
 };
 const pKey = (k) => `hdoc.p.${k}.${P.code}`;
 
@@ -3285,7 +3402,7 @@ function startViewer(role) {
   P.who = role === 'table' ? 'table' : LS.get(pKey('who'), null);
   P.view = LS.get(pKey('view'), null);
   P.seen = LS.get(pKey('seen.' + (P.who || '')), { msgs: [], reveal: 0 });
-  if (P.who && P.who !== 'table') P.notebook = LS.get(pKey('notes.' + P.who), { pages: [] });
+  if (P.who && P.who !== 'table') { P.notebook = LS.get(pKey('notes.' + P.who), { pages: [] }); P.pending = LS.get(pKey('pending.' + P.who), []); }
   if (P.view) { applyTheme(P.view.theme); renderP(); } else renderWaiting();
   connectP();
   // If the GM goes quiet (closed laptop, reloaded console), reconnect on our own.
@@ -3337,6 +3454,7 @@ function chooseWho(id) {
   P.freshDevice = !known; // old messages go to the inbox quietly instead of popping up
   LS.set(pKey('seen.' + id), P.seen);
   P.notebook = LS.get(pKey('notes.' + id), { pages: [] });
+  P.pending = LS.get(pKey('pending.' + id), []); P.thread = null; P.drafts = {};
   send({ t: 'join', who: 'char:' + id });
   renderWaiting('Joining');
 }
@@ -3413,6 +3531,8 @@ async function onDataP(msg) {
     const prevFear = P.view && P.view.fear ? P.view.fear.value : null;
     P.view = msg.view; LS.set(pKey('view'), P.view);
     if (P.freshDevice && P.view.me) { P.seen.msgs = (P.view.messages || []).map((m) => m.id); saveSeen(); P.freshDevice = false; }
+    settlePending();
+    if (P.tab === 'inbox' && P.thread) markThreadSeen(P.thread);
     P.fearPulseFrom = prevFear != null && P.view.fear && P.view.fear.value > prevFear ? prevFear : null;
     applyTheme(P.view.theme);
     await requestAssets(P.view);
@@ -3425,6 +3545,12 @@ async function onDataP(msg) {
     const merged = mergeNotebook(P.notebook, msg.notebook);
     P.notebook = merged; LS.set(pKey('notes.' + P.who), merged);
     if (P.tab === 'notes' && !document.activeElement?.closest?.('.notes')) renderP();
+  } else if (msg.t === 'sayfail') {
+    const p = P.pending.find((x) => x.cid === msg.cid);
+    P.pending = P.pending.filter((x) => x.cid !== msg.cid); savePending();
+    if (p) { const k = threadKey([P.who, ...p.to]); if (!P.drafts[k]) P.drafts[k] = p.text; }
+    toast('Not sent. ' + (msg.why || ''), 5000);
+    renderP();
   } else if (msg.t === 'kicked') {
     LS.del(pKey('who')); P.who = null; pickScreen();
   }
@@ -3455,18 +3581,123 @@ function checkPopups() {
   }
   if (P.role === 'table' || !v.messages || P.msgOpen || P.revealOpen) return;
   const seen = new Set(P.seen.msgs || []);
-  const fresh = v.messages.filter((m) => !seen.has(m.id)).sort((a, b) => a.at - b.at)[0];
+  const viewingKey = P.tab === 'inbox' ? P.thread : null;
+  const unseen = v.messages.filter((m) => m.from !== v.me && !seen.has(m.id) && threadKey(msgParts(m)) !== viewingKey).sort((a, b) => a.at - b.at);
+  // Messages between players arrive quietly: a badge and a short notice.
+  for (const m of unseen) if (m.from !== 'gm' && !P.notified.has(m.id)) {
+    P.notified.add(m.id);
+    toast(`${whoName(m.from, v.roster)}: ${m.text.length > 70 ? m.text.slice(0, 70) + '…' : m.text}`, 4500);
+  }
+  // Messages from the GM pop up.
+  const fresh = unseen.find((m) => m.from === 'gm');
   if (fresh) {
     P.msgOpen = true;
+    const parts = msgParts(fresh), key = threadKey(parts);
+    const others = parts.filter((p) => p !== 'gm' && p !== v.me);
     modal((box, close) => {
-      box.append(h('h3', null, 'Private message'), h('p', { class: 'small-text muted' }, 'Only you can see this.'),
+      box.append(h('h3', null, others.length ? 'Message from the GM' : 'Private message from the GM'),
+        h('p', { class: 'small-text muted' }, others.length ? 'Also sent to ' + others.map((id) => whoName(id, v.roster)).join(', ') + '.' : 'Only you can see this.'),
         h('div', { class: 'msg', style: { marginTop: '10px' } }, h('div', { class: 'txt' }, fresh.text)),
-        h('div', { class: 'row end' }, h('button', { class: 'btn primary', onclick: () => close(true) }, 'Got it')));
-    }).then(() => {
+        h('div', { class: 'row end' },
+          v.msg && v.msg.send ? h('button', { class: 'btn', onclick: () => close('reply') }, 'Reply') : null,
+          h('button', { class: 'btn primary', onclick: () => close(true) }, 'Got it')));
+    }).then((r) => {
       P.seen.msgs = [...(P.seen.msgs || []), fresh.id]; saveSeen();
-      P.msgOpen = false; renderP(); checkPopups();
+      P.msgOpen = false;
+      if (r === 'reply') openThread(key);
+      renderP(); checkPopups();
     });
   }
+}
+
+/* ---------- messages ---------- */
+function savePending() { if (P.who && P.who !== 'table') LS.set(pKey('pending.' + P.who), P.pending); }
+function markThreadSeen(key) {
+  const v = P.view; if (!v || !v.messages) return;
+  const ids = v.messages.filter((m) => threadKey(msgParts(m)) === key).map((m) => m.id);
+  const seen = new Set(P.seen.msgs || []);
+  if (ids.every((id) => seen.has(id))) return;
+  P.seen.msgs = [...seen, ...ids]; saveSeen();
+}
+function openThread(key) { P.tab = 'inbox'; P.thread = key; P.toBottom = true; markThreadSeen(key); }
+/* Drop pending messages the GM has confirmed; resend the rest once per connection. */
+function settlePending() {
+  const have = new Set((P.view.messages || []).map((m) => m.cid).filter(Boolean));
+  const before = P.pending.length;
+  P.pending = P.pending.filter((p) => !have.has(p.cid));
+  if (P.pending.length !== before) savePending();
+  if (P.pending.length && P.resentGen !== P.gen) {
+    P.resentGen = P.gen;
+    for (const p of P.pending) send({ t: 'say', cid: p.cid, to: p.to, text: p.text });
+  }
+}
+function sendSay(to, text) {
+  const p = { id: 'pending-' + uid(), cid: 'c' + uid() + uid(), from: P.who, to: [...to], text: text.slice(0, MSG_MAX), at: Date.now(), pending: true };
+  P.pending.push(p); savePending();
+  send({ t: 'say', cid: p.cid, to: p.to, text: p.text });
+  P.resentGen = P.gen;
+  if (P.thread === 'new' && document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  P.thread = threadKey([P.who, ...to]); P.toBottom = true;
+  renderP();
+}
+function messagesPanel() {
+  const v = P.view, me = v.me, roster = v.roster || [];
+  const opts = v.msg || { send: false, p2p: false };
+  const all = [...(v.messages || []), ...P.pending];
+  const threads = threadsOf(all);
+  const seen = new Set(P.seen.msgs || []);
+  const offline = P.status !== 'live';
+  const sendNote = offline ? 'Not connected. It will send when you reconnect.' : 'The GM can read every message.';
+  const back = h('button', { class: 'btn ghost small', onclick: () => { P.thread = null; renderP(); window.scrollTo(0, 0); } }, '‹ All messages');
+
+  if (P.thread === 'new') {
+    if (!opts.send) { P.thread = null; return messagesPanel(); }
+    const others = roster.filter((r) => r.id !== me);
+    if (!opts.p2p) P.composeTo = ['gm'];
+    P.composeTo = P.composeTo.filter((id) => id === 'gm' || others.some((r) => r.id === id));
+    const same = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+    const setTo = (ids) => { P.composeTo = [...new Set(ids)]; renderP(); };
+    const toggle = (id) => setTo(P.composeTo.includes(id) ? P.composeTo.filter((x) => x !== id) : [...P.composeTo, id]);
+    const chip = (id, label, face) => h('button', { class: 'to-chip' + (P.composeTo.includes(id) ? ' on' : ''), 'aria-pressed': P.composeTo.includes(id) ? 'true' : 'false', onclick: () => toggle(id) }, face, label);
+    const everyone = ['gm', ...others.map((r) => r.id)];
+    const group = v.myGroup && v.myGroup.members.length ? v.myGroup.members : null;
+    const picker = opts.p2p ? h('div', { class: 'stack', style: { gap: '10px' } },
+      h('div', { class: 'row', style: { gap: '6px' } },
+        group ? h('button', { class: 'btn small' + (same(P.composeTo, group) ? ' on' : ''), onclick: () => setTo(group) }, 'My group' + (v.myGroup.name ? ` (${v.myGroup.name})` : '')) : null,
+        others.length ? h('button', { class: 'btn small' + (same(P.composeTo, everyone) ? ' on' : ''), onclick: () => setTo(everyone) }, 'Whole party') : null,
+        P.composeTo.length ? h('button', { class: 'btn small ghost', onclick: () => setTo([]) }, 'Clear') : null),
+      h('div', { class: 'to-chips' }, chip('gm', 'GM', whoFace('gm')), others.map((r) => chip(r.id, r.name, faceEl(r)))))
+      : h('p', { class: 'hint' }, 'Messages go to the GM.');
+    const existing = P.composeTo.length && threads.some((t) => t.key === threadKey([me, ...P.composeTo]));
+    return h('section', { class: 'v-sec stack' }, back, h('h2', { style: { marginBottom: '0' } }, 'New message'),
+      h('span', { class: 'ctl-label' }, 'To'), picker,
+      existing ? h('p', { class: 'hint' }, 'This adds to your conversation with them.') : null,
+      composerEl({ key: 'new', drafts: P.drafts, placeholder: 'Write a message', disabled: !P.composeTo.length, onSend: (t) => sendSay(P.composeTo, t), note: P.composeTo.length ? sendNote : 'Choose who it goes to.' }));
+  }
+
+  const cur = P.thread ? threads.find((t) => t.key === P.thread) : null;
+  if (cur) {
+    const others = cur.parts.filter((p) => p !== me);
+    const canReply = opts.send && (opts.p2p || cur.parts.includes('gm'));
+    return h('section', { class: 'v-sec stack' }, back,
+      h('div', null, h('h2', { style: { marginBottom: '2px' } }, threadTitle(cur.parts, me, roster)),
+        h('div', { class: 'small-text muted' }, 'You, ' + others.slice().sort((x, y) => (x === 'gm' ? -1 : y === 'gm' ? 1 : 0)).map((id) => whoName(id, roster)).join(', '))),
+      threadEl(cur, me, roster),
+      canReply ? composerEl({ key: cur.key, drafts: P.drafts, placeholder: 'Reply', onSend: (t) => sendSay(others, t), note: sendNote })
+        : h('p', { class: 'hint' }, opts.send ? 'Replies here are switched off right now.' : 'The GM has switched off sending messages.'));
+  }
+  P.thread = null;
+  return h('section', { class: 'v-sec stack' },
+    h('div', { class: 'row', style: { justifyContent: 'space-between' } }, h('h2', { style: { marginBottom: '0' } }, 'Messages'),
+      opts.send ? h('button', { class: 'btn primary small', onclick: () => { P.thread = 'new'; if (!P.composeTo.length) P.composeTo = ['gm']; renderP(); } }, 'New message') : null),
+    threads.length ? h('div', { class: 'thread-list' }, threads.map((t) => {
+      const n = t.msgs.filter((m) => m.from !== me && !m.pending && !seen.has(m.id)).length;
+      return h('button', { class: 'thread-item' + (n ? ' unread' : ''), onclick: () => { openThread(t.key); renderP(); } },
+        h('span', { class: 'faces' }, t.parts.filter((p) => p !== me).slice(0, 3).map((id) => whoFace(id, roster))),
+        h('span', { class: 'ti-body' }, h('span', { class: 'ti-title' }, threadTitle(t.parts, me, roster)),
+          h('span', { class: 'ti-snip' }, t.last.from === me ? 'You' : whoName(t.last.from, roster), ': ', t.last.text)),
+        h('span', { class: 'ti-side' }, h('span', { class: 'when' }, t.last.pending ? 'Sending…' : fmtTime(t.last.at)), n ? h('span', { class: 'badge' }, n) : null));
+    })) : h('p', { class: 'empty' }, opts.send ? 'No messages yet. Messages from the GM pop up on your screen; you can also write to the GM or to other players.' : 'Private messages from the GM will appear here.'));
 }
 
 /* ---------- notes ---------- */
@@ -3513,7 +3744,7 @@ function renderP() {
   if (!P.view) return renderWaiting(P.statusText);
   const v = P.view;
   const seen = new Set(P.seen.msgs || []);
-  const unread = (v.messages || []).filter((m) => !seen.has(m.id)).length;
+  const unread = (v.messages || []).filter((m) => m.from !== v.me && !seen.has(m.id)).length;
   const me = (v.roster || []).find((r) => r.id === v.me);
   const menu = P.role === 'player' ? h('button', { class: 'btn ghost icon-btn', title: 'Options', 'aria-label': 'Options', onclick: () => {
     modal((box, close) => box.append(h('h3', null, me ? `Playing ${me.name}` : 'Options'),
@@ -3529,21 +3760,30 @@ function renderP() {
     mode: P.role, tab: P.tab, status: P.status, statusText: P.statusText, unread, seen: P.seen, menu,
     fearPulseFrom: P.fearPulseFrom,
     onTab: (k) => {
+      if (k === 'inbox' && P.tab === 'inbox') P.thread = null; // tapping Messages again returns to the list
       P.tab = k;
-      if (k === 'inbox') { P.seen.msgs = (v.messages || []).map((m) => m.id); saveSeen(); }
-      renderP(); window.scrollTo(0, 0);
+      if (k === 'inbox' && P.thread && P.thread !== 'new') { markThreadSeen(P.thread); P.toBottom = true; }
+      renderP(); if (!P.toBottom) window.scrollTo(0, 0);
     },
-    notesPanel, onOpenHandout: (ho) => handoutOverlay(ho),
+    notesPanel, messagesPanel, onOpenHandout: (ho) => handoutOverlay(ho),
   });
   P.fearPulseFrom = null;
-  if (typingNotes) {
-    // Keep the notebook untouched while someone is typing; refresh only the header and tabs.
+  const typingMsg = !typingNotes && P.tab === 'inbox' && a && a.matches && a.matches('.composer textarea');
+  const nearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 120;
+  if (typingNotes || typingMsg) {
+    // Leave the box they're typing in alone (rebuilding it can drop a phone's keyboard); refresh around it.
     const cur = appRoot();
-    for (const sel of ['.v-head', '.tabs']) { const o = cur.querySelector(sel), n = screen.querySelector(sel); if (o && n) o.replaceWith(n); }
+    for (const sel of ['.v-head', '.tabs', ...(typingMsg ? ['.thread'] : [])]) { const o = cur.querySelector(sel), n = screen.querySelector(sel); if (o && n) o.replaceWith(n); }
+    if (typingMsg && !a.dataset.hooked) { a.dataset.hooked = '1'; a.addEventListener('blur', () => renderSoon()); }
+    if (typingMsg && (P.toBottom || nearBottom)) window.scrollTo(0, document.documentElement.scrollHeight);
+    P.toBottom = false;
     return;
   }
-  appRoot().replaceChildren(screen);
-  window.scrollTo(0, scroll);
+  keepFocus(() => appRoot().replaceChildren(screen));
+  const inThread = P.tab === 'inbox' && P.thread && P.thread !== 'new';
+  if (inThread && (P.toBottom || nearBottom)) window.scrollTo(0, document.documentElement.scrollHeight);
+  else window.scrollTo(0, scroll);
+  P.toBottom = false;
 }
 
 
@@ -3555,6 +3795,7 @@ const G = {
   S: null, notes: {}, peer: null, clients: new Map(), section: 'clocks',
   status: 'wait', statusText: 'Opening the room', idTries: 0,
   selChip: null, previewWho: null, previewTab: 'board', lastDragSend: 0,
+  drafts: {}, msgThread: null, draftTo: [],
 };
 const activeRoster = () => G.S.roster.filter((r) => r.active);
 
@@ -3669,7 +3910,39 @@ function onClientData(conn, msg) {
     for (const o of G.clients.values()) if (o.who === c.who && o !== c) safeSend(o.conn, { t: 'notes', notebook: merged });
     safeSend(conn, { t: 'notes', notebook: merged });
     if (G.section === 'notes' && !typing()) renderGM();
+  } else if (msg.t === 'say' && c.who && c.who.startsWith('char:')) {
+    onPlayerSay(c, msg);
   }
+}
+
+/* A player sent a message. Check it against the room's rules, store it, pass it on. */
+function onPlayerSay(c, msg) {
+  const S = G.S, me = c.who.slice(5);
+  const cid = String(msg.cid || '').slice(0, 40);
+  const fail = (why) => safeSend(c.conn, { t: 'sayfail', cid, why });
+  if (cid && S.messages.some((x) => x.cid === cid && x.from === me)) { sendView(c, true); return; } // already have it
+  if (!S.modules.messages || !S.msgOpts.playersSend) return fail('The GM has turned off player messages.');
+  const text = String(msg.text || '').trim().slice(0, MSG_MAX);
+  if (!text) return fail('The message was empty.');
+  const valid = new Set(['gm', ...activeRoster().map((r) => r.id)]);
+  const to = [...new Set((Array.isArray(msg.to) ? msg.to : []).filter((x) => typeof x === 'string' && valid.has(x) && x !== me))];
+  if (!to.length) return fail('Nobody to send it to.');
+  const key = threadKey([me, ...to]);
+  if (!S.msgOpts.playerToPlayer && to.some((x) => x !== 'gm')) {
+    const existing = to.includes('gm') && S.messages.some((x) => threadKey(msgParts(x)) === key);
+    if (!existing) return fail('Right now, messages can only go to the GM.');
+  }
+  const now = Date.now();
+  c.sent = (c.sent || []).filter((t) => now - t < 60000);
+  if (c.sent.length >= 30) return fail('Too many messages at once. Wait a moment.');
+  c.sent.push(now);
+  S.messages.push({ id: 'x' + uid(), from: me, to, text, at: now, cid });
+  const viewing = G.section === 'messages' && G.msgThread === key;
+  if (viewing) S.msgRead[key] = now;
+  saveGM(); broadcastSoon();
+  if (G.section === 'messages') renderGM();
+  else { const nav = $('.gm-nav'); if (nav) nav.replaceWith(gmNav()); refreshPreview(); }
+  if (to.includes('gm') && !viewing) toast(`${whoName(me, S.roster)}: ${text.length > 90 ? text.slice(0, 90) + '…' : text}`, 5000);
 }
 
 /* What a given viewer is allowed to see. Anything hidden never leaves this browser. */
@@ -3700,7 +3973,13 @@ function deriveView(who) {
       .map((ho) => ({ id: ho.id, title: ho.title, kind: ho.kind, asset: ho.asset || null, body: ho.body || '', at: ho.sharedAt || ho.at }));
     if (S.reveal && v.handouts.some((ho) => ho.id === S.reveal.id)) v.reveal = { id: S.reveal.id, at: S.reveal.at };
   }
-  if (m.messages && me) v.messages = S.messages.filter((x) => x.to.includes(me)).map((x) => ({ id: x.id, text: x.text, at: x.at }));
+  if (m.messages && me) {
+    v.messages = S.messages.filter((x) => msgParts(x).includes(me))
+      .map((x) => ({ id: x.id, from: x.from || 'gm', to: x.to, text: x.text, at: x.at, cid: x.from === me ? x.cid : undefined }));
+    v.msg = { send: !!S.msgOpts.playersSend, p2p: !!(S.msgOpts.playersSend && S.msgOpts.playerToPlayer) };
+    const g = S.groups.find((x) => x.members.includes(me));
+    if (m.party && S.groups.length > 1 && g) v.myGroup = { name: g.name, members: g.members.filter((id) => id !== me) };
+  }
   if (m.notes && me) v.notes = true;
   return v;
 }
@@ -3745,8 +4024,14 @@ const SECTIONS = [
 
 function renderGM() {
   const y = window.scrollY;
-  appRoot().replaceChildren(h('div', { class: 'gm' }, gmTop(), gmNav(), h('main', { class: 'gm-main', id: 'gm-main' }, sectionEl())));
+  const old = $('.thread-pane .thread');
+  const near = !old || old.scrollHeight - old.scrollTop - old.clientHeight < 60, oldTop = old ? old.scrollTop : 0;
+  const main = sectionEl(); // first: opening a conversation marks it read before the nav badge is counted
+  keepFocus(() => appRoot().replaceChildren(h('div', { class: 'gm' }, gmTop(), gmNav(), h('main', { class: 'gm-main', id: 'gm-main' }, main))));
   window.scrollTo(0, y);
+  const t = $('.thread-pane .thread');
+  if (t) t.scrollTop = G.scrollThread || near ? t.scrollHeight : oldTop;
+  G.scrollThread = false;
   refreshPreview();
 }
 
@@ -3789,7 +4074,8 @@ function gmNav() {
   return h('nav', { class: 'gm-nav', 'aria-label': 'Console sections' }, SECTIONS.map((sec) => {
     if (sec.head) return [h('div', { class: 'sep' }), h('div', { class: 'nav-head' }, sec.head)];
     return h('div', { class: 'navrow' + (G.section === sec.id ? ' cur' : '') },
-      h('button', { class: 'nav', 'aria-current': G.section === sec.id ? 'page' : null, onclick: () => { G.section = sec.id; renderGM(); window.scrollTo(0, 0); } }, sec.label),
+      h('button', { class: 'nav', 'aria-current': G.section === sec.id ? 'page' : null, onclick: () => { G.section = sec.id; if (sec.id === 'messages') G.scrollThread = true; renderGM(); window.scrollTo(0, 0); } }, sec.label,
+        sec.id === 'messages' && gmUnreadTotal() ? h('span', { class: 'badge' }, gmUnreadTotal()) : null),
       sec.mod ? switchEl('', S.modules[sec.mod], (v) => { S.modules[sec.mod] = v; commit(); }, `Players see ${sec.label}`)
         : sec.gmOnly ? h('span', { class: 'small-text muted', style: { paddingRight: '8px' }, title: 'Never sent to players' }, 'You only') : null);
   }).flat().slice(1),
@@ -4074,37 +4360,88 @@ function secHandouts() {
 }
 
 /* ---------- Messages ---------- */
+function gmUnread(t) {
+  if (!t.parts.includes('gm')) return 0;
+  const r = G.S.msgRead[t.key] || 0;
+  return t.msgs.filter((m) => (m.from || 'gm') !== 'gm' && m.at > r).length;
+}
+function gmUnreadTotal() { return threadsOf(G.S.messages).reduce((n, t) => n + gmUnread(t), 0); }
+function gmSend(to, text) {
+  const S = G.S, now = Date.now();
+  S.messages.push({ id: 'x' + uid(), from: 'gm', to: [...to], text, at: now });
+  const key = threadKey(['gm', ...to]);
+  G.msgThread = key; G.scrollThread = true;
+  S.msgRead[key] = now;
+  commit();
+}
 function secMessages() {
-  const S = G.S;
-  G.draftTo = G.draftTo || [];
+  const S = G.S, roster = activeRoster(), everyone = S.roster;
   const online = new Set([...G.clients.values()].map((c) => c.who));
-  const ta = h('textarea', { placeholder: 'Write a private message', 'aria-label': 'Message', style: { minHeight: '100px' } });
-  ta.value = G.draft || '';
-  const sendBtn = h('button', { class: 'btn primary' }, 'Send');
-  const sync = () => { sendBtn.disabled = !ta.value.trim() || !G.draftTo.length; };
-  ta.addEventListener('input', () => { G.draft = ta.value; sync(); });
-  sendBtn.addEventListener('click', () => {
-    S.messages.push({ id: 'x' + uid(), to: [...G.draftTo], text: ta.value.trim(), at: Date.now() });
-    G.draft = ''; commit(); toast('Sent.');
-  });
-  sync();
-  const all = activeRoster().map((r) => r.id);
-  const chips = h('div', { class: 'shareto' },
-    h('label', { class: 'chipcheck' + (G.draftTo.length === all.length ? ' on' : '') }, h('input', { type: 'checkbox', checked: G.draftTo.length === all.length && all.length > 0, onchange: (e) => { G.draftTo = e.target.checked ? [...all] : []; renderGM(); } }), 'Everyone'),
-    activeRoster().map((r) => h('label', { class: 'chipcheck' + (G.draftTo.includes(r.id) ? ' on' : ''), title: online.has('char:' + r.id) ? 'Connected' : 'Not connected — they’ll see it when they join' },
-      h('input', { type: 'checkbox', checked: G.draftTo.includes(r.id), onchange: (e) => { G.draftTo = e.target.checked ? [...G.draftTo, r.id] : G.draftTo.filter((x) => x !== r.id); renderGM(); } }),
+  const threads = threadsOf(S.messages);
+  if (G.msgThread && G.msgThread !== 'new' && !threads.some((t) => t.key === G.msgThread)) G.msgThread = null;
+  const cur = G.msgThread && G.msgThread !== 'new' ? threads.find((t) => t.key === G.msgThread) : null;
+  if (cur && cur.parts.includes('gm') && (S.msgRead[cur.key] || 0) < cur.last.at) { S.msgRead[cur.key] = cur.last.at; saveGM(); }
+  const open = (key) => { G.msgThread = key; G.scrollThread = true; renderGM(); };
+
+  const rules = h('div', { class: 'row', style: { gap: '22px', margin: '10px 0 4px' } },
+    switchEl('Players can send messages', S.msgOpts.playersSend, (v) => { S.msgOpts.playersSend = v; commit(); }),
+    S.msgOpts.playersSend ? switchEl('Players can message each other', S.msgOpts.playerToPlayer, (v) => { S.msgOpts.playerToPlayer = v; commit(); }) : null);
+
+  const list = h('div', { class: 'thread-list' },
+    h('button', { class: 'btn' + (cur ? '' : ' primary'), onclick: () => { G.msgThread = 'new'; renderGM(); } }, 'New message'),
+    threads.map((t) => {
+      const n = gmUnread(t), overheard = !t.parts.includes('gm');
+      return h('button', { class: 'thread-item' + (cur && t.key === cur.key ? ' cur' : '') + (n ? ' unread' : ''), onclick: () => open(t.key) },
+        h('span', { class: 'faces' }, t.parts.filter((p) => p !== 'gm').slice(0, 3).map((id) => whoFace(id, everyone))),
+        h('span', { class: 'ti-body' },
+          h('span', { class: 'ti-title' }, threadTitle(t.parts, 'gm', roster)),
+          overheard ? h('span', { class: 'ti-tag' }, 'Between players') : null,
+          h('span', { class: 'ti-snip' }, whoName(t.last.from || 'gm', everyone), ': ', t.last.text)),
+        h('span', { class: 'ti-side' }, h('span', { class: 'when' }, fmtTime(t.last.at)), n ? h('span', { class: 'badge' }, n) : null));
+    }),
+    threads.length ? null : h('p', { class: 'empty' }, 'No conversations yet.'));
+
+  let pane;
+  if (cur) {
+    const overheard = !cur.parts.includes('gm');
+    const others = cur.parts.filter((p) => p !== 'gm');
+    const names = others.map((id) => whoName(id, everyone));
+    pane = h('div', { class: 'panel stack thread-pane' },
+      h('div', { class: 'row', style: { justifyContent: 'space-between' } },
+        h('h3', { style: { fontSize: '22px' } }, threadTitle(cur.parts, 'gm', roster)),
+        h('span', { class: 'small-text muted' }, (overheard ? 'Between ' : 'You and ') + names.join(', '))),
+      threadEl(cur, 'gm', everyone, { onDelete: async (m) => {
+        if (await ask('Delete this message?', 'It disappears for everyone in the conversation.', 'Delete', true)) { S.messages = S.messages.filter((x) => x !== m); commit(); }
+      } }),
+      overheard
+        ? h('div', { class: 'stack' }, h('p', { class: 'hint' }, 'You can read this, but you aren’t in the conversation. Messaging them starts a new one that includes you.'),
+          h('div', null, h('button', { class: 'btn small', onclick: () => { G.draftTo = [...others]; G.msgThread = 'new'; renderGM(); } }, 'Message them')))
+        : composerEl({ key: cur.key, drafts: G.drafts, placeholder: 'Reply', onSend: (t) => gmSend(others, t), note: 'Ctrl+Enter also sends' }));
+  } else {
+    G.draftTo = (G.draftTo || []).filter((id) => roster.some((r) => r.id === id));
+    const all = roster.map((r) => r.id);
+    const same = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+    const setTo = (ids) => { G.draftTo = [...ids]; renderGM(); };
+    const quick = h('div', { class: 'row', style: { gap: '6px' } }, h('span', { class: 'ctl-label' }, 'Quick pick'),
+      h('button', { class: 'btn small' + (all.length && same(G.draftTo, all) ? ' on' : ''), onclick: () => setTo(all) }, 'Whole party'),
+      S.groups.length > 1 ? S.groups.filter((g) => g.members.length).map((g) => h('button', { class: 'btn small' + (same(G.draftTo, g.members) ? ' on' : ''), onclick: () => setTo(g.members) }, g.name || 'Group')) : null,
+      G.draftTo.length ? h('button', { class: 'btn small ghost', onclick: () => setTo([]) }, 'Clear') : null);
+    const chips = h('div', { class: 'shareto' }, roster.map((r) => h('label', { class: 'chipcheck' + (G.draftTo.includes(r.id) ? ' on' : ''), title: online.has('char:' + r.id) ? 'Connected' : 'Not connected — they’ll see it when they join' },
+      h('input', { type: 'checkbox', checked: G.draftTo.includes(r.id), onchange: (e) => setTo(e.target.checked ? [...G.draftTo, r.id] : G.draftTo.filter((x) => x !== r.id)) }),
       faceEl(r, { class: online.has('char:' + r.id) ? '' : 'off' }), r.name)));
-  const byId = Object.fromEntries(S.roster.map((r) => [r.id, r]));
-  const log = S.messages.slice().reverse().map((m) => h('div', { class: 'msg' },
-    h('div', { class: 'row', style: { justifyContent: 'space-between' } },
-      h('span', { class: 'when' }, fmtTime(m.at), ' to ', m.to.map((id) => byId[id] ? byId[id].name : '?').join(', ')),
-      h('button', { class: 'btn small ghost danger', onclick: async () => { if (await ask('Unsend this message?', 'It will be removed from their inbox.', 'Unsend', true)) { S.messages = S.messages.filter((x) => x !== m); commit(); } } }, 'Unsend')),
-    h('div', { class: 'txt' }, m.text)));
-  return h('div', null, secHead('Messages', 'messages', 'Messages pop up on the recipient’s screen and stay in their inbox. Nobody else can see them.'),
-    S.modules.messages ? null : h('p', { class: 'hint', style: { color: 'var(--danger)' } }, 'Messages are switched off, so players won’t receive anything you send.'),
-    h('div', { class: 'panel stack', style: { marginTop: '14px' } }, h('span', { class: 'ctl-label' }, 'To'), chips, ta, h('div', { class: 'row end' }, sendBtn)),
-    h('h3', { style: { margin: '24px 0 10px', fontSize: '22px' } }, 'Sent'),
-    log.length ? h('div', { class: 'stack' }, log) : h('p', { class: 'empty' }, 'Nothing sent yet.'));
+    const existing = G.draftTo.length && threads.some((t) => t.key === threadKey(['gm', ...G.draftTo]));
+    pane = h('div', { class: 'panel stack thread-pane' },
+      h('h3', { style: { fontSize: '22px' } }, 'New message'),
+      quick, h('span', { class: 'ctl-label' }, 'To'), chips,
+      existing ? h('p', { class: 'hint' }, 'You already have a conversation with exactly these players. This adds to it.') : null,
+      composerEl({ key: 'new', drafts: G.drafts, placeholder: 'Write a private message', disabled: !G.draftTo.length, onSend: (t) => gmSend(G.draftTo, t), note: G.draftTo.length ? 'Ctrl+Enter also sends' : 'Choose who it goes to.' }));
+  }
+
+  return h('div', null,
+    secHead('Messages', 'messages', 'Your messages pop up on players’ screens. Players can reply, message you, and message each other; those arrive quietly with a badge. Every conversation passes through this console, so you can read them all, and players are told that.'),
+    S.modules.messages ? null : h('p', { class: 'hint', style: { color: 'var(--danger)' } }, 'Messages are switched off, so players can’t see or send anything.'),
+    rules,
+    h('div', { class: 'msg-layout' }, list, pane));
 }
 
 /* ---------- Notes ---------- */
