@@ -471,8 +471,11 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .wimg{max-width:100%; max-height:340px; object-fit:contain; align-self:flex-start; border-radius:var(--radius-s); border:1px solid var(--line)}
 .wplayer{border-left:3px solid var(--accent); padding:6px 0 6px 12px; margin:4px 0}
 .wplayer p{margin-top:3px; white-space:pre-wrap}
-.wbody{display:flex; flex-direction:column; gap:10px; line-height:1.55}
-.wbody ul{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:4px}
+.wbody{display:flex; flex-direction:column; gap:14px; line-height:1.62; max-width:78ch}
+.wbody ul{margin:0; padding-left:22px; display:flex; flex-direction:column; gap:12px}
+.wbody li{padding-left:2px}
+.wbody li > p + p{margin-top:8px}
+.wbody li::marker{color:var(--accent)}
 .wbody .gm-note{background:color-mix(in srgb, var(--fear) 12%, transparent); border-radius:var(--radius-s); padding:8px 10px}
 .wbody .gm-note b{color:var(--fear); letter-spacing:.04em}
 .wlink{background:none; border:0; padding:0; font:inherit; color:var(--accent); text-decoration:underline; text-underline-offset:2px; cursor:pointer}
@@ -491,7 +494,8 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .table-mode .clock .node-svg{width:64px; height:64px}
 .nodes-clock{align-items:flex-start; text-align:left}
 .wbody p{margin:0}
-.wbody .wsec{font-size:19px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); color:var(--accent); font-family:var(--font-display)}
+.wbody .wsec{font-size:21px; margin-top:22px; padding-top:16px; border-top:1px solid var(--line); color:var(--accent); font-family:var(--font-display)}
+.wbody .wsec:first-child{margin-top:4px}
 .wtoc{border:1px solid var(--line); border-radius:var(--radius-s); padding:8px 12px; display:flex; flex-direction:column; gap:6px}
 .wtoc-list{display:flex; flex-direction:column; gap:3px; align-items:flex-start; font-size:14px; max-height:220px; overflow-y:auto}
 .wentry mark{background:color-mix(in srgb, var(--accent) 45%, transparent); color:inherit; border-radius:3px; padding:0 2px}
@@ -5074,14 +5078,14 @@ function wSearch(q, cat) {
     if (tl === t) score += 100; else if (tl.startsWith(t)) score += 60; else if (tl.includes(t)) score += 40;
     if (e.aliases.some((a) => a.toLowerCase().includes(t))) score += 35;
     if (e.tags.some((g) => g.toLowerCase().includes(t))) score += 20;
-    const hay = [e.summary, e.audience, e.body].join('\n');
+    const hay = wPlain([e.summary, e.audience, e.body].join('\n'));
     const at = hay.toLowerCase().indexOf(t);
     if (at >= 0) score += 10;
     if (!score) continue;
     let snip = e.summary;
     if (at >= 0 && !tl.includes(t)) {
       const a = Math.max(0, at - 50), b = Math.min(hay.length, at + t.length + 70);
-      snip = (a ? '…' : '') + wPlain(hay.slice(a, b)) + (b < hay.length ? '…' : '');
+      snip = (a ? '…' : '') + hay.slice(a, b) + (b < hay.length ? '…' : '');
     }
     out.push({ e, snip, score });
   }
@@ -5123,13 +5127,21 @@ function wBodyEl(body, onLink) {
     const lines = block.split('\n').filter((l) => l.trim());
     while (lines.length && /^##\s+/.test(lines[0])) box.append(h('h3', { class: 'wsec', id: 'wsec-' + n++ }, lines.shift().replace(/^##\s+/, '')));
     if (!lines.length) continue;
-    if (lines.every((l) => /^\s*[-*]\s+/.test(l))) {
-      box.append(h('ul', null, lines.map((l) => h('li', null, wInline(l.replace(/^\s*[-*]\s+/, ''), onLink)))));
+    // A list: "- " starts a bullet; an indented line continues the same bullet as a new paragraph.
+    if (/^\s*[-*]\s+/.test(lines[0]) && lines.every((l) => /^\s*[-*]\s+/.test(l) || /^\s{2,}\S/.test(l))) {
+      const ul = h('ul');
+      for (const l of lines) {
+        if (/^\s*[-*]\s+/.test(l)) ul.append(h('li', null, h('p', null, wInline(l.replace(/^\s*[-*]\s+/, ''), onLink))));
+        else ul.lastChild.append(h('p', null, wInline(l.trim(), onLink)));
+      }
+      box.append(ul);
       continue;
     }
-    const txt = lines.join(' ');
-    const gm = /^GM:\s*/i.test(txt);
-    box.append(h('p', { class: gm ? 'gm-note' : null }, gm ? h('b', null, 'GM: ') : null, wInline(txt.replace(/^GM:\s*/i, ''), onLink)));
+    // Otherwise each line is its own paragraph.
+    for (const txt of lines) {
+      const gm = /^GM:\s*/i.test(txt);
+      box.append(h('p', { class: gm ? 'gm-note' : null }, gm ? h('b', null, 'GM: ') : null, wInline(txt.replace(/^GM:\s*/i, ''), onLink)));
+    }
   }
   return box;
 }
@@ -5150,7 +5162,7 @@ function wHighlight(root, q) {
   const needle = q.toLowerCase();
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-    if (n.parentElement.closest('.wtitle, .eyebrow, button.btn')) continue;
+    if (n.parentElement.closest('.wtitle, .eyebrow, button.btn, .wtoc')) continue;
     const i = n.data.toLowerCase().indexOf(needle);
     if (i < 0) continue;
     const mid = n.splitText(i); mid.splitText(q.length);
