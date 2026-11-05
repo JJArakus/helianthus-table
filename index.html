@@ -281,7 +281,7 @@ input[type=range]{accent-color:var(--accent)}
    GM CONSOLE
    ============================================================ */
 .gm{display:grid; grid-template-columns:230px minmax(0,1fr); grid-template-rows:auto 1fr; min-height:100vh}
-.gm-top{grid-column:1/-1; display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:10px 18px; border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--bg) 94%, transparent); position:sticky; top:0; z-index:40}
+.gm-top{grid-column:1/-1; display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:10px 18px; border-bottom:1px solid var(--line); background:var(--bg); position:sticky; top:0; z-index:40}
 .gm-top h1{font-size:20px; white-space:nowrap}
 .roomcode{display:flex; align-items:center; gap:8px; padding:4px 6px 4px 12px; border:1px solid var(--line); border-radius:var(--radius-s)}
 .roomcode b{font-family:var(--font-display); font-size:22px; letter-spacing:.14em; font-weight:400}
@@ -290,7 +290,7 @@ input[type=range]{accent-color:var(--accent)}
 .conns .face.off{opacity:.25; filter:grayscale(1)}
 .gm-fear{display:flex; align-items:center; gap:10px; margin-left:auto}
 .gm-fear .fear-pip{--d:16px}
-.gm-nav{border-right:1px solid var(--line); padding:14px 10px; display:flex; flex-direction:column; gap:2px; position:sticky; top:59px; align-self:start; height:calc(100vh - 59px); overflow:auto}
+.gm-nav{border-right:1px solid var(--line); padding:14px 10px; display:flex; flex-direction:column; gap:2px; position:sticky; top:var(--gm-top-h,59px); align-self:start; height:calc(100vh - var(--gm-top-h,59px)); overflow:auto}
 .gm-nav .navrow{display:flex; align-items:center; gap:6px; border-radius:var(--radius-s)}
 .gm-nav .navrow button.nav{flex:1; text-align:left; background:none; border:0; padding:9px 10px; border-radius:var(--radius-s); cursor:pointer; color:var(--muted)}
 .gm-nav .navrow button.nav:hover{color:var(--ink)}
@@ -455,7 +455,7 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .eyebrow{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent)}
 .reveal .eyebrow{margin-bottom:2px}
 .wiki{display:grid; grid-template-columns:minmax(240px,320px) minmax(0,1fr); gap:16px; margin-top:12px; align-items:start}
-.wiki-side{display:flex; flex-direction:column; gap:10px; position:sticky; top:74px; max-height:calc(100vh - 96px); overflow:hidden}
+.wiki-side{display:flex; flex-direction:column; gap:10px; position:sticky; top:calc(var(--gm-top-h,62px) + 12px); max-height:calc(100vh - var(--gm-top-h,62px) - 24px); overflow:hidden}
 .wq{width:100%}
 .wcats{display:flex; flex-wrap:wrap; gap:5px}
 .wres{display:flex; flex-direction:column; gap:4px; overflow-y:auto; padding-right:4px}
@@ -491,6 +491,10 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .table-mode .clock .node-svg{width:64px; height:64px}
 .nodes-clock{align-items:flex-start; text-align:left}
 .wbody p{margin:0}
+.wbody .wsec{font-size:19px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); color:var(--accent); font-family:var(--font-display)}
+.wtoc{border:1px solid var(--line); border-radius:var(--radius-s); padding:8px 12px; display:flex; flex-direction:column; gap:6px}
+.wtoc-list{display:flex; flex-direction:column; gap:3px; align-items:flex-start; font-size:14px; max-height:220px; overflow-y:auto}
+.wentry mark{background:color-mix(in srgb, var(--accent) 45%, transparent); color:inherit; border-radius:3px; padding:0 2px}
 
 </style>
 </head>
@@ -2890,13 +2894,13 @@ function modal(build) {
     if (f) setTimeout(() => f.focus(), 30);
   });
 }
-function ask(title, body, okLabel = 'Confirm', danger = false) {
+function ask(title, body, okLabel = 'Confirm', danger = false, cancelLabel = 'Cancel') {
   return modal((box, close) => {
     box.append(
       h('h3', null, title),
       body ? h('p', { class: 'hint' }, body) : null,
       h('div', { class: 'row end' },
-        h('button', { class: 'btn ghost', onclick: () => close(false) }, 'Cancel'),
+        h('button', { class: 'btn ghost', onclick: () => close(false) }, cancelLabel),
         h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), onclick: () => close(true) }, okLabel))
     );
   });
@@ -4255,6 +4259,7 @@ function renderGM() {
   const main = sectionEl(); // first: opening a conversation marks it read before the nav badge is counted
   keepFocus(() => appRoot().replaceChildren(h('div', { class: 'gm' }, gmTop(), gmNav(), h('main', { class: 'gm-main', id: 'gm-main' }, main))));
   window.scrollTo(0, y);
+  const top = $('.gm-top'); if (top) document.documentElement.style.setProperty('--gm-top-h', top.offsetHeight + 'px');
   const t = $('.thread-pane .thread');
   if (t) t.scrollTop = G.scrollThread || near ? t.scrollHeight : oldTop;
   G.scrollThread = false;
@@ -5029,7 +5034,7 @@ async function editAdversary(orig) {
    can be shown to players, and then only its player-safe text
    travels.
    ============================================================ */
-const WIKI_CATS = ['Party', 'People', 'Places', 'Factions', 'Lore', 'Creatures', 'Items'];
+const WIKI_CATS = ['Party', 'People', 'Places', 'Factions', 'Lore', 'Creatures', 'Items', 'Campaign'];
 const WIKI_KEY = 'hdoc.gm.wiki';
 
 function wikiLoad() {
@@ -5047,6 +5052,7 @@ function wikiNorm(e) {
     tags: list(e.tags), aliases: list(e.aliases),
     summary: String(e.summary || ''), audience: String(e.audience || ''), body: String(e.body || ''),
     asset: e.asset || null, at: Number(e.at) || Date.now(),
+    pack: !!e.pack, edited: !!e.edited, // pack entries update on the next import unless you've edited them
   };
 }
 const wFind = (id) => G.W.entries.find((e) => e.id === id);
@@ -5075,33 +5081,47 @@ function wSearch(q, cat) {
     let snip = e.summary;
     if (at >= 0 && !tl.includes(t)) {
       const a = Math.max(0, at - 50), b = Math.min(hay.length, at + t.length + 70);
-      snip = (a ? '…' : '') + hay.slice(a, b).replace(LINK_RE, (_, x, y) => y || x).replace(/\s+/g, ' ') + (b < hay.length ? '…' : '');
+      snip = (a ? '…' : '') + wPlain(hay.slice(a, b)) + (b < hay.length ? '…' : '');
     }
     out.push({ e, snip, score });
   }
   return out.sort((a, b) => b.score - a.score || a.e.title.localeCompare(b.e.title));
+}
+/* Notes text without markup, for snippets. */
+const wPlain = (t) => t.replace(LINK_RE, (_, x, y) => y || x).replace(/\*\*/g, '').replace(/^##\s+/gm, '').replace(/^\s*-\s+/gm, '').replace(/\s+/g, ' ');
+/* Scroll the page (never an inner layout box) so an element sits just under the top bar. */
+function wScrollTo(el, offset) {
+  const bar = $('.gm-top'), pad = (bar ? bar.offsetHeight : 0) + 16;
+  const sc = document.scrollingElement;
+  sc.scrollTo({ top: el.getBoundingClientRect().top + sc.scrollTop - (offset ?? pad) });
 }
 function wBacklinks(e) {
   const names = [e.title, ...e.aliases].map((x) => x.toLowerCase());
   return G.W.entries.filter((o) => o !== e && [...o.body.matchAll(LINK_RE)].some((m) => names.includes(m[1].trim().toLowerCase())));
 }
 
-/* Notes markup: blank line = new paragraph, "- " = bullet, [[Name]] or [[Name|shown text]] = link, "GM:" = GM-only marker. */
+/* Notes markup: blank line = new paragraph, "## " = heading, "- " = bullet, **bold**,
+   [[Name]] or [[Name|shown text]] = link, "GM:" = GM-only marker. */
+function wBold(text) {
+  return text.split(/\*\*(.+?)\*\*/g).map((t, i) => (i % 2 ? h('b', null, t) : t)).filter((t) => t !== '');
+}
 function wInline(text, onLink) {
   const out = []; let last = 0;
   for (const m of text.matchAll(LINK_RE)) {
-    if (m.index > last) out.push(text.slice(last, m.index));
+    if (m.index > last) out.push(...wBold(text.slice(last, m.index)));
     const target = m[1].trim(), found = wByName(target);
     out.push(h('button', { class: 'wlink' + (found ? '' : ' missing'), title: found ? `Open ${found.title}` : `No entry for “${target}” yet. Click to start one.`, onclick: () => onLink(target, found) }, (m[2] || m[1]).trim()));
     last = m.index + m[0].length;
   }
-  if (last < text.length) out.push(text.slice(last));
+  if (last < text.length) out.push(...wBold(text.slice(last)));
   return out;
 }
 function wBodyEl(body, onLink) {
   const box = h('div', { class: 'wbody' });
+  let n = 0;
   for (const block of body.replace(/\r/g, '').split(/\n\s*\n/)) {
     const lines = block.split('\n').filter((l) => l.trim());
+    while (lines.length && /^##\s+/.test(lines[0])) box.append(h('h3', { class: 'wsec', id: 'wsec-' + n++ }, lines.shift().replace(/^##\s+/, '')));
     if (!lines.length) continue;
     if (lines.every((l) => /^\s*[-*]\s+/.test(l))) {
       box.append(h('ul', null, lines.map((l) => h('li', null, wInline(l.replace(/^\s*[-*]\s+/, ''), onLink)))));
@@ -5117,11 +5137,27 @@ function wBodyEl(body, onLink) {
 /* ---------- UI state and navigation ---------- */
 function wv() { return (G.wiki = G.wiki || { q: '', cat: '', id: null, hist: [], draft: null }); }
 function wRerender() { (G.wikiWindow ? renderWikiWindow : renderGM)(); }
-function wOpen(id) {
+function wOpen(id, hl) {
   const v = wv();
   if (v.id && v.id !== id) v.hist.push(v.id);
   v.id = id; v.draft = null; wRerender();
-  const main = document.querySelector('.wiki-main'); if (main) main.scrollTop = 0;
+  const art = document.querySelector('.wentry');
+  if (art) wScrollTo(art);
+  if (hl && hl.trim() && art) wHighlight(art, hl.trim());
+}
+/* Mark the first place the search term appears in the entry and bring it into view. */
+function wHighlight(root, q) {
+  const needle = q.toLowerCase();
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (n.parentElement.closest('.wtitle, .eyebrow, button.btn')) continue;
+    const i = n.data.toLowerCase().indexOf(needle);
+    if (i < 0) continue;
+    const mid = n.splitText(i); mid.splitText(q.length);
+    const mark = h('mark', null, mid.data); mid.replaceWith(mark);
+    wScrollTo(mark, window.innerHeight / 2);
+    return;
+  }
 }
 function wStartDraft(e, title) {
   const v = wv();
@@ -5189,13 +5225,29 @@ async function importGMPack() {
   if (data.app !== 'helianthus-gm-pack' || !Array.isArray(data.entries)) { toast('That file isn’t a wiki file or GM pack.'); return; }
   for (const a of data.assets || []) if (a && a.id && a.data) await AssetStore.put(a);
   const incoming = data.entries.map(wikiNorm);
-  const clash = incoming.filter((e) => wFind(e.id));
-  let replace = false;
-  if (clash.length) replace = await ask(`${clash.length} of these entries are already in your wiki`, 'Replace your versions with the ones in the file, or keep yours and add only the new entries?', 'Replace mine');
-  let added = 0, replaced = 0;
+  // Entries you've never edited are simply refreshed. Only your edited ones need a decision.
+  // Entries from before edits were tracked: anything saved well after its batch was imported counts as edited.
+  const ids0 = new Set(incoming.map((e) => e.id));
+  const legacy = G.W.entries.filter((x) => ids0.has(x.id) && !x.pack && !x.edited);
+  const base = legacy.length ? Math.min(...legacy.map((x) => x.at)) : 0;
+  const mine = incoming.filter((e) => { const x = wFind(e.id); return x && (x.edited || (!x.pack && x.at > base + 60000)); });
+  let replaceMine = false;
+  if (mine.length) {
+    const names = mine.slice(0, 6).map((e) => e.title).join(', ') + (mine.length > 6 ? `, and ${mine.length - 6} more` : '');
+    replaceMine = await ask(`You’ve edited ${mine.length} of these entries`, `${names}. Use the file’s versions and lose your edits, or keep your versions of these?`, 'Use the file’s versions', true, 'Keep mine');
+  }
+  let added = 0, updated = 0, kept = 0, retired = 0;
   for (const e of incoming) {
     const i = G.W.entries.findIndex((x) => x.id === e.id);
-    if (i < 0) { G.W.entries.push(e); added++; } else if (replace) { G.W.entries[i] = e; replaced++; }
+    if (i < 0) { G.W.entries.push(e); added++; }
+    else if (mine.includes(e) && !replaceMine) kept++;
+    else { G.W.entries[i] = e; updated++; }
+  }
+  if (data.full) { // a full pack: its entries that were dropped upstream go too, unless you've edited them
+    const ids = new Set(incoming.map((e) => e.id));
+    const before = G.W.entries.length;
+    G.W.entries = G.W.entries.filter((x) => !(x.pack && !x.edited && !ids.has(x.id)));
+    retired = before - G.W.entries.length;
   }
   wikiSave();
   let layers = 0;
@@ -5205,7 +5257,7 @@ async function importGMPack() {
     for (const l of data.mapLayers) { const m = allMaps.find((x) => x.id === l.map); if (m && l.gmAsset) { m.gmAsset = l.gmAsset; layers++; } }
     if (layers) saveGM();
   }
-  toast([added && `${added} entries added`, replaced && `${replaced} replaced`, layers && `${layers} GM map${layers > 1 ? 's' : ''} attached`].filter(Boolean).join(', ') || 'Nothing new in that file.', 4000);
+  toast([added && `${added} added`, updated && `${updated} updated`, kept && `${kept} of yours kept`, retired && `${retired} retired`, layers && `${layers} GM map${layers > 1 ? 's' : ''} attached`].filter(Boolean).join(', ') || 'Nothing new in that file.', 5000);
   wRerender();
 }
 
@@ -5213,7 +5265,7 @@ async function importGMPack() {
 function wResults() {
   const v = wv();
   const res = wSearch(v.q, v.cat);
-  return res.length ? res.map(({ e, snip }) => h('button', { class: 'wres-item' + (e.id === v.id ? ' cur' : ''), onclick: () => { v.hist = []; wOpen(e.id); } },
+  return res.length ? res.map(({ e, snip }) => h('button', { class: 'wres-item' + (e.id === v.id ? ' cur' : ''), onclick: () => { v.hist = []; wOpen(e.id, v.q); } },
     h('span', { class: 'wres-t' }, e.title, h('span', { class: 'wres-c' }, e.cat)), snip ? h('span', { class: 'wres-s' }, snip) : null))
     : [h('p', { class: 'empty' }, v.q ? `Nothing matches “${v.q}”.` : 'No entries yet.'),
       v.q ? h('button', { class: 'btn small', onclick: () => wStartDraft(null, v.q) }, `Start “${v.q}”`) : null];
@@ -5225,7 +5277,7 @@ function secWiki() {
   const results = h('div', { class: 'wres' }, wResults());
   search.addEventListener('input', () => { v.q = search.value; results.replaceChildren(...wResults().filter(Boolean)); });
   search.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') { const r = wSearch(v.q, v.cat)[0]; if (r) { ev.preventDefault(); v.hist = []; wOpen(r.e.id); } }
+    if (ev.key === 'Enter') { const r = wSearch(v.q, v.cat)[0]; if (r) { ev.preventDefault(); v.hist = []; wOpen(r.e.id, v.q); } }
     if (ev.key === 'Escape') { v.q = ''; search.value = ''; results.replaceChildren(...wResults().filter(Boolean)); }
   });
   const counts = Object.fromEntries(WIKI_CATS.map((c) => [c, G.W.entries.filter((e) => e.cat === c).length]));
@@ -5268,6 +5320,8 @@ function wEntry(e) {
     img ? h('img', { class: 'wimg', src: img, alt: '' }) : null,
     h('div', { class: 'wplayer' }, h('div', { class: 'ctl-label' }, e.audience ? 'What players see' : 'Summary (what players see)'),
       pt ? h('p', null, pt) : h('p', { class: 'muted' }, 'Nothing written for players yet.')),
+    (() => { const secs = [...e.body.matchAll(/^##\s+(.+)$/gm)].map((m) => m[1]); return secs.length >= 3 ? h('nav', { class: 'wtoc' }, h('span', { class: 'ctl-label' }, 'On this page'),
+      h('div', { class: 'wtoc-list' }, secs.map((t, i) => h('button', { class: 'wlink', onclick: () => { const el = document.getElementById('wsec-' + i); if (el) wScrollTo(el); } }, t)))) : null; })(),
     e.body ? wBodyEl(e.body, wLink) : null,
     backs.length ? h('div', { class: 'wbacks' }, h('span', { class: 'ctl-label' }, 'Mentioned in'),
       h('div', { class: 'row', style: { gap: '6px' } }, backs.map((o) => h('button', { class: 'wlink', onclick: () => wOpen(o.id) }, o.title)))) : null);
@@ -5282,7 +5336,7 @@ function wEditor() {
     if (!title) { toast('Give the entry a title first.'); return; }
     const other = G.W.entries.find((x) => x.title.toLowerCase() === title.toLowerCase() && x.id !== d.id);
     if (other && (d.isNew || other.id !== d.id)) { toast(`There’s already an entry called “${other.title}”.`); return; }
-    const e = wikiNorm({ ...d, title, at: Date.now(), id: d.isNew ? undefined : d.id });
+    const e = wikiNorm({ ...d, title, at: Date.now(), id: d.isNew ? undefined : d.id, edited: true });
     if (d.isNew) { let id = e.id, n = 2; while (wFind(id)) id = e.id + '-' + n++; e.id = id; G.W.entries.push(e); }
     else G.W.entries[G.W.entries.findIndex((x) => x.id === d.id)] = e;
     wikiSave(); v.draft = null; v.id = e.id; wRerender();
