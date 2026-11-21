@@ -67,7 +67,7 @@ a{color:var(--accent)}
 .stepper .val{min-width:3.4em; text-align:center; font-variant-numeric:tabular-nums}
 .field{display:flex; flex-direction:column; gap:4px; font-size:15px; color:var(--muted)}
 .field > span{color:var(--muted)}
-input[type=text],input[type=number],input:not([type]),select,textarea{
+input[type=text],input[type=search],input[type=number],input:not([type]),select,textarea{
   background:color-mix(in srgb, var(--bg) 70%, var(--panel));
   border:1px solid var(--line); border-radius:var(--radius-s);
   padding:7px 10px; color:var(--ink); min-width:0;
@@ -529,6 +529,33 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .modal.wide{width:min(760px, calc(100vw - 32px))}
 .script-window .script-side{top:12px; max-height:calc(100vh - 24px)}
 @media (max-width: 900px){ .script{grid-template-columns:1fr} .script-side{position:static; max-height:none} }
+.script.with-npcs{grid-template-columns:minmax(180px,230px) minmax(0,1fr) minmax(290px,360px)}
+.script.script-empty{grid-template-columns:minmax(0,1fr)} .script.script-empty.with-npcs{grid-template-columns:minmax(0,1fr) minmax(290px,360px)}
+.npc-panel{position:sticky; top:calc(var(--gm-top-h,62px) + 12px); max-height:calc(100vh - var(--gm-top-h,62px) - 24px); overflow:auto; padding:10px 12px}
+.script-window .npc-panel{top:12px; max-height:calc(100vh - 24px)}
+.npc-head{display:flex; gap:6px; align-items:center; margin-bottom:8px} .npc-head h3{margin:0; font-size:20px}
+.npc-q{width:100%; margin-bottom:8px}
+.npc-list{display:flex; flex-direction:column; gap:8px}
+.npc-card{border:1px solid var(--line); border-radius:10px; background:color-mix(in srgb, var(--panel) 92%, var(--accent) 8%)}
+.npc-card.open{border-color:color-mix(in srgb, var(--accent) 55%, var(--line))}
+.npc-top{display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; text-align:left; background:none; border:0; padding:9px 12px; color:var(--ink,inherit); font:inherit; cursor:pointer; border-radius:10px}
+.npc-top:hover{background:color-mix(in srgb, var(--line) 40%, transparent)}
+.npc-name{font-weight:700; font-size:16px}
+.npc-kind{font-size:13px; color:var(--muted)}
+.npc-sum{font-size:13px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.npc-body{padding:0 12px 10px}
+.npc-f{margin-top:8px} .npc-f .sc-text{font-size:14px; line-height:1.45}
+.npc-l{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:2px}
+.npc-f-voice .sc-text{border-left:3px solid var(--accent); padding-left:10px}
+.npc-edit-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px} .npc-edit-grid .npc-wide{grid-column:1 / -1}
+.npc-window{max-width:900px} .npc-panel.solo{position:static; max-height:none; overflow:visible; padding:0}
+@media (max-width: 1250px){
+  .script.with-npcs{grid-template-columns:minmax(0,1fr) minmax(280px,340px)}
+  .script.with-npcs .script-side{grid-column:1; position:static; max-height:none; flex-direction:row; flex-wrap:wrap}
+  .script.with-npcs .script-main{grid-column:1}
+  .script.with-npcs .npc-panel{grid-column:2; grid-row:1 / span 2}
+}
+@media (max-width: 900px){ .script.with-npcs, .script.script-empty.with-npcs{grid-template-columns:1fr} .script.with-npcs .npc-panel{grid-column:auto; grid-row:auto; position:static; max-height:none} .npc-edit-grid{grid-template-columns:1fr} }
 
 /* new-message notices */
 #msg-notices{position:fixed; top:calc(12px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%); width:min(440px, calc(100vw - 24px)); display:flex; flex-direction:column; gap:8px; z-index:190; pointer-events:none}
@@ -5439,7 +5466,7 @@ async function importGMPack() {
     retired = before - G.W.entries.length;
   }
   wikiSave();
-  let advAdded = 0, advUpdated = 0, scAdded = 0, mapsAdded = 0; const scripts = { added: 0, updated: 0, kept: 0 };
+  let advAdded = 0, advUpdated = 0, scAdded = 0, mapsAdded = 0; const scripts = { added: 0, updated: 0, kept: 0 }; const npcN = { added: 0, updated: 0, kept: 0 };
   if (!G.wikiWindow && Array.isArray(data.adversaries)) { // stat blocks: refreshed unless you've edited them
     const A = G.S.adversaries;
     for (const t0 of data.adversaries) {
@@ -5463,8 +5490,9 @@ async function importGMPack() {
       }
       if (live) { if (!S.activeMap && S.maps[0]) S.activeMap = S.maps[0].id; } else if (!sc.activeMap && sc.maps[0]) sc.activeMap = sc.maps[0].id;
       if (Array.isArray(s0.script) && s0.script.length) scripts[importScript(s0.id, s0.script)]++;
+      if (Array.isArray(s0.npcs) && s0.npcs.length) { const r = importNpcs(s0.id, s0.npcs); for (const k in r) npcN[k] += r[k]; }
     }
-    if (scripts.added || scripts.updated || scripts.kept) scriptSave();
+    if (scripts.added || scripts.updated || scripts.kept || npcN.added || npcN.updated || npcN.kept) scriptSave();
   }
   if (advAdded || advUpdated || scAdded || mapsAdded) commit();
   let layers = 0;
@@ -5474,7 +5502,7 @@ async function importGMPack() {
     for (const l of data.mapLayers) { const m = allMaps.find((x) => x.id === l.map); if (m && l.gmAsset) { m.gmAsset = l.gmAsset; layers++; } }
     if (layers) saveGM();
   }
-  toast([added && `${added} added`, updated && `${updated} updated`, kept && `${kept} of yours kept`, retired && `${retired} retired`, layers && `${layers} GM map${layers > 1 ? 's' : ''} attached`, scAdded && `${scAdded} scenario${scAdded > 1 ? 's' : ''} added`, mapsAdded && `${mapsAdded} map${mapsAdded > 1 ? 's' : ''} added`, (advAdded || advUpdated) && `${advAdded + advUpdated} stat block${advAdded + advUpdated > 1 ? 's' : ''} ${advAdded ? 'added' : 'updated'}`, scripts.added && 'script added', scripts.updated && 'script updated', scripts.kept && 'your edited script kept'].filter(Boolean).join(', ') || 'Nothing new in that file.', 5000);
+  toast([added && `${added} added`, updated && `${updated} updated`, kept && `${kept} of yours kept`, retired && `${retired} retired`, layers && `${layers} GM map${layers > 1 ? 's' : ''} attached`, scAdded && `${scAdded} scenario${scAdded > 1 ? 's' : ''} added`, mapsAdded && `${mapsAdded} map${mapsAdded > 1 ? 's' : ''} added`, (advAdded || advUpdated) && `${advAdded + advUpdated} stat block${advAdded + advUpdated > 1 ? 's' : ''} ${advAdded ? 'added' : 'updated'}`, scripts.added && 'script added', scripts.updated && 'script updated', scripts.kept && 'your edited script kept', (npcN.added || npcN.updated) && `${npcN.added + npcN.updated} NPC card${npcN.added + npcN.updated > 1 ? 's' : ''} ${npcN.added ? 'added' : 'updated'}`, npcN.kept && `${npcN.kept} edited NPC card${npcN.kept > 1 ? 's' : ''} kept`].filter(Boolean).join(', ') || 'Nothing new in that file.', 5000);
   wRerender();
 }
 
@@ -5610,7 +5638,7 @@ function scriptLoad() {
 }
 function scriptSave() {
   if (!LS.set(SCRIPT_KEY, G.SC)) toast('The script couldn’t be saved. This browser’s storage may be full.');
-  if (G.scriptWindow) LS.set('hdoc.gm.lastChange', Date.now()); else markChanged();
+  if (G.scriptWindow || G.npcWindow) LS.set('hdoc.gm.lastChange', Date.now()); else markChanged();
 }
 const scriptView = () => (G.scv = G.scv || { hideDone: false });
 function scenarioId() { return G.S && G.S.scenario; }
@@ -5713,10 +5741,14 @@ function secScript() {
   };
   const popBtn = G.scriptWindow ? null : h('button', { class: 'btn small ghost', title: 'Open the script in its own window, for a second screen',
     onclick: () => window.open(location.pathname + location.search + '#script', 'helianthus-script', 'width=1100,height=900') }, 'Pop out');
+  const showNpcs = npcPanelOn();
+  const npcSwitch = switchEl('NPC panel', showNpcs, (val) => { LS.set('hdoc.gm.npcPanel', val); rerenderScript(); }, 'Show the NPC quick reference beside the script');
+  const npcAside = showNpcs ? h('aside', { class: 'npc-panel panel', 'aria-label': 'NPCs' }, npcPanel({ closable: true })) : null;
   if (!sc || !sc.sections.length) {
-    return h('div', null, head, h('div', { class: 'panel', style: { marginTop: '12px' } },
+    const empty = h('div', { class: 'panel' },
       h('p', { class: 'empty' }, `No script for ${scName} yet. A GM pack can bring one in, or you can start one here.`),
-      h('div', { class: 'toolbar' }, h('button', { class: 'btn small primary', onclick: addSection }, '+ Add section'), popBtn)));
+      h('div', { class: 'toolbar' }, h('button', { class: 'btn small primary', onclick: addSection }, '+ Add section'), popBtn, npcSwitch));
+    return h('div', null, head, h('div', { class: 'script script-empty' + (showNpcs ? ' with-npcs' : '') }, empty, npcAside));
   }
   const next = nextUnchecked(sc);
   const [done, total] = sc.sections.reduce((a, s) => { const [d, t] = scCounts(s); return [a[0] + d, a[1] + t]; }, [0, 0]);
@@ -5726,6 +5758,7 @@ function secScript() {
     switchEl('Hide finished sections', v.hideDone, (val) => { v.hideDone = val; rerenderScript(); }),
     h('span', { class: 'small-text muted', style: { alignSelf: 'center' } }, `${done} of ${total} done`),
     h('span', { class: 'grow' }),
+    npcSwitch,
     popBtn,
     h('button', { class: 'btn small ghost', disabled: !done, onclick: async () => {
       if (await ask('Untick everything?', 'Every entry in this script goes back to unchecked. Your edits stay.', 'Untick all')) { for (const s of sc.sections) for (const e of s.entries) e.done = false; scriptCommit(false); }
@@ -5773,7 +5806,7 @@ function secScript() {
         } }, '+ Read-aloud')));
   }), v.hideDone && visible.length < sc.sections.length ? h('p', { class: 'empty' }, `${sc.sections.length - visible.length} finished section${sc.sections.length - visible.length === 1 ? '' : 's'} hidden.`) : null);
 
-  return h('div', null, head, tools, h('div', { class: 'script' }, side, main));
+  return h('div', null, head, tools, h('div', { class: 'script' + (showNpcs ? ' with-npcs' : '') }, side, main, npcAside));
 }
 
 /* ---------- the pop-out window (#script) ---------- */
@@ -5856,6 +5889,142 @@ function secCharacters() {
   return h('div', null, head, picker, h('div', { class: 'char-layout' }, side, main));
 }
 
+/* ============================================================
+   NPCs: a quick reference card for everyone in the current scenario, beside the script
+   (or in its own window, #npcs). Kept with the scenario's script in the script store, so it
+   is GM only and never sent to players. Cards arrive in GM packs, or you write them here.
+   ============================================================ */
+const NPC_FIELDS = [['kind', 'Ancestry, gender, age', 1], ['look', 'Looks', 3], ['motive', 'Motivation', 3], ['voice', 'Performance', 3],
+  ['where', 'Where they are', 2], ['condition', 'Condition', 2], ['wants', 'What they want', 2], ['plot', 'Part in the story', 6]];
+function scRec(id, make) {
+  id = id || scenarioId(); let r = G.SC.scripts[id];
+  if (!r && make) r = G.SC.scripts[id] = { sections: [], orig: null, edited: false };
+  return r || null;
+}
+function curNpcs() { const r = scRec(); return (r && r.npcs) || []; }
+/* From a GM pack: new cards are added, unedited ones refresh, cards you've edited or written stay. */
+function importNpcs(scId, list) {
+  const r = scRec(scId, true); const cur = r.npcs || []; const res = { added: 0, updated: 0, kept: 0 };
+  const ids = new Set(list.map((n) => n.id)); const next = [];
+  for (const n0 of list) {
+    if (!n0 || !n0.id) continue;
+    const c = cur.find((x) => x.id === n0.id); const fresh = { ...clone(n0), pack: true };
+    if (!c) { next.push(fresh); res.added++; } else if (c.edited) { next.push(c); res.kept++; } else { next.push(fresh); res.updated++; }
+  }
+  for (const c of cur) if (!ids.has(c.id) && (!c.pack || c.edited)) next.push(c);
+  r.npcs = next; r.npcsOrig = clone(list);
+  return res;
+}
+const npcPanelOn = () => LS.get('hdoc.gm.npcPanel', true) !== false;
+function npcOpen() { if (!G.npcOpen) { const v = LS.get('hdoc.gm.npcOpen', []); G.npcOpen = new Set(Array.isArray(v) ? v : []); } return G.npcOpen; }
+function npcSetOpen(ids, on) { const s = npcOpen(); for (const id of ids) on ? s.add(id) : s.delete(id); LS.set('hdoc.gm.npcOpen', [...s]); rerenderNpcs(); }
+function rerenderNpcs() { if (G.npcWindow) renderNpcWindow(); else rerenderScript(); }
+function npcCommit() { scriptSave(); rerenderNpcs(); }
+
+async function editNpc(n) {
+  const isNew = !n;
+  const d = n ? clone(n) : { id: 'npc' + uid(), name: '', kind: '', look: '', motive: '', voice: '', where: '', condition: '', wants: '', plot: '' };
+  const ok = await modal((box, close) => {
+    box.classList.add('wide');
+    const name = h('input', { type: 'text', value: d.name || '', placeholder: 'Name', autofocus: true });
+    name.addEventListener('input', () => { d.name = name.value; });
+    const fields = NPC_FIELDS.map(([k, lab, rows]) => {
+      const el = rows === 1 ? h('input', { type: 'text', value: d[k] || '' }) : h('textarea', { rows: String(rows), style: { width: '100%' } });
+      if (rows !== 1) el.value = d[k] || '';
+      el.addEventListener('input', () => { d[k] = el.value; });
+      return h('label', { class: 'field' + (k === 'plot' ? ' npc-wide' : '') }, h('span', null, lab), el);
+    });
+    box.append(h('h3', null, isNew ? 'New NPC' : 'Edit NPC'),
+      h('div', { class: 'npc-edit-grid' }, h('label', { class: 'field' }, h('span', null, 'Name'), name), ...fields),
+      h('p', { class: 'hint' }, '**bold**, *italic*, “- ” for a bullet, and a blank line for a new paragraph.'),
+      h('div', { class: 'row', style: { justifyContent: 'space-between' } },
+        isNew ? h('span') : h('div', { class: 'row', style: { gap: '6px' } },
+          h('button', { class: 'btn small ghost', onclick: () => close('up') }, 'Move up'),
+          h('button', { class: 'btn small ghost', onclick: () => close('down') }, 'Move down'),
+          h('button', { class: 'btn small ghost danger', onclick: () => close('delete') }, 'Delete')),
+        h('div', { class: 'row', style: { gap: '6px' } },
+          h('button', { class: 'btn ghost', onclick: () => close(null) }, 'Cancel'),
+          h('button', { class: 'btn primary', onclick: () => close('save') }, 'Save'))));
+  });
+  if (!ok) return;
+  const r = scRec(null, true); const list = r.npcs = r.npcs || [];
+  const i = n ? list.indexOf(n) : -1;
+  if (ok === 'save') {
+    if (!String(d.name || '').trim()) d.name = 'Unnamed';
+    d.edited = true;
+    if (isNew) { list.push(d); npcOpen().add(d.id); LS.set('hdoc.gm.npcOpen', [...npcOpen()]); } else Object.assign(n, d);
+  } else if (ok === 'delete') { if (!(await ask(`Delete ${d.name || 'this NPC'}?`, 'The card is removed from this scenario.', 'Delete', true))) return; list.splice(i, 1); }
+  else if (ok === 'up' && i > 0) list.splice(i - 1, 0, list.splice(i, 1)[0]);
+  else if (ok === 'down' && i < list.length - 1) list.splice(i + 1, 0, list.splice(i, 1)[0]);
+  else return;
+  npcCommit();
+}
+
+function npcCard(n) {
+  const isOpen = npcOpen().has(n.id);
+  const body = NPC_FIELDS.filter(([k]) => k !== 'kind' && n[k] && String(n[k]).trim());
+  return h('article', { class: 'npc-card' + (isOpen ? ' open' : '') },
+    h('button', { class: 'npc-top', 'aria-expanded': String(isOpen), onclick: () => npcSetOpen([n.id], !isOpen) },
+      h('span', { class: 'npc-name' }, n.name || 'Unnamed'),
+      n.kind ? h('span', { class: 'npc-kind' }, n.kind) : null,
+      !isOpen && n.condition ? h('span', { class: 'npc-sum' }, n.condition) : null),
+    isOpen ? h('div', { class: 'npc-body' },
+      body.map(([k, lab]) => h('div', { class: 'npc-f npc-f-' + k }, h('div', { class: 'npc-l' }, lab), scBody(n[k]))),
+      h('div', { class: 'row', style: { gap: '6px', marginTop: '8px' } },
+        h('button', { class: 'btn tiny ghost', onclick: () => editNpc(n) }, 'Edit'),
+        n.wiki && !G.npcWindow && !G.scriptWindow && typeof wOpen === 'function' && wFind(n.wiki)
+          ? h('button', { class: 'btn tiny ghost', onclick: () => { G.section = 'wiki'; renderGM(); wOpen(n.wiki); } }, 'Wiki entry') : null)) : null);
+}
+function npcPanel(opts) {
+  opts = opts || {};
+  const list = curNpcs(); const r = scRec();
+  const v = (G.npcv = G.npcv || { q: '' }); const q = v.q.trim().toLowerCase();
+  const shown = q ? list.filter((n) => [n.name, n.kind, n.where, n.condition, n.plot].join(' ').toLowerCase().includes(q)) : list;
+  const open = npcOpen(); const allOpen = shown.length > 0 && shown.every((n) => open.has(n.id));
+  const changed = r && r.npcsOrig && (list.some((n) => n.edited) || r.npcsOrig.some((o) => !list.find((n) => n.id === o.id)));
+  return h('div', { class: 'npc-inner' },
+    h('div', { class: 'npc-head' },
+      h('h3', { class: 'grow' }, 'NPCs', list.length ? h('span', { class: 'sc-count' }, ' ' + list.length) : null),
+      G.npcWindow ? null : h('button', { class: 'btn tiny ghost', title: 'Open the NPCs in their own window, so they stay visible in any section',
+        onclick: () => window.open(location.pathname + location.search + '#npcs', 'helianthus-npcs', 'width=560,height=900') }, 'Pop out'),
+      opts.closable ? h('button', { class: 'btn tiny ghost', title: 'Hide the NPC panel', onclick: () => { LS.set('hdoc.gm.npcPanel', false); rerenderScript(); } }, 'Hide') : null),
+    list.length > 4 ? h('input', { type: 'search', class: 'npc-q', 'data-keep': 'npc-q', placeholder: 'Filter NPCs', 'aria-label': 'Filter NPCs', value: v.q,
+      oninput: (e) => { v.q = e.target.value; rerenderNpcs(); } }) : null,
+    list.length ? h('div', { class: 'npc-list' }, shown.length ? shown.map(npcCard) : h('p', { class: 'empty' }, `No NPC matches “${v.q}”.`))
+      : h('p', { class: 'empty' }, 'No NPCs for this scenario yet. A GM pack can bring them in, or you can add one.'),
+    h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap', marginTop: '8px' } },
+      h('button', { class: 'btn tiny ghost', onclick: () => editNpc(null) }, '+ Add NPC'),
+      shown.length ? h('button', { class: 'btn tiny ghost', onclick: () => npcSetOpen(shown.map((n) => n.id), !allOpen) }, allOpen ? 'Collapse all' : 'Expand all') : null,
+      changed ? h('button', { class: 'btn tiny ghost danger', onclick: async () => {
+        if (await ask('Restore the original NPCs?', 'Your edits to these cards, and any cards you added, are replaced by the versions from the GM pack.', 'Restore', true)) {
+          r.npcs = r.npcsOrig.map((n) => ({ ...clone(n), pack: true })); npcCommit();
+        }
+      } }, 'Restore originals') : null));
+}
+
+/* ---------- the pop-out window (#npcs) ---------- */
+function startNpcWindow() {
+  G.npcWindow = true;
+  G.S = LS.get('hdoc.gm.state', null);
+  if (G.S) applyTheme(G.S.theme);
+  scriptLoad();
+  document.title = 'NPCs — ' + ((G.S && G.S.title) || APP.name);
+  window.addEventListener('storage', (e) => {
+    if (document.querySelector('.modal-back') || typing()) return;
+    if (e.key === SCRIPT_KEY) { scriptLoad(); renderNpcWindow(); }
+    if (e.key === 'hdoc.gm.state') { const before = scenarioId(); G.S = LS.get('hdoc.gm.state', null); if (scenarioId() !== before) renderNpcWindow(); }
+  });
+  renderNpcWindow();
+}
+function renderNpcWindow() {
+  const y = window.scrollY;
+  const scName = G.S ? ((G.S.scenarios.find((x) => x.id === G.S.scenario) || {}).name || '') : '';
+  keepFocus(() => appRoot().replaceChildren(h('div', { class: 'wiki-window npc-window' },
+    scName ? h('p', { class: 'muted small-text', style: { margin: '0 0 6px' } }, scName) : null,
+    G.S ? h('div', { class: 'npc-panel solo' }, npcPanel()) : h('p', { class: 'empty' }, 'Open the GM console in this browser first.'))));
+  window.scrollTo(0, y);
+}
+
 
 /* ============================================================
    Boot: #gm opens the console, #table the table display,
@@ -5871,6 +6040,7 @@ function secCharacters() {
   if (hash === 'gm') startGM();
   else if (hash === 'wiki') startWikiWindow();
   else if (hash === 'script') startScriptWindow();
+  else if (hash === 'npcs') startNpcWindow();
   else startViewer(hash === 'table' ? 'table' : 'player');
 })();
 
