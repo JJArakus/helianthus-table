@@ -499,7 +499,63 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .wtoc{border:1px solid var(--line); border-radius:var(--radius-s); padding:8px 12px; display:flex; flex-direction:column; gap:6px}
 .wtoc-list{display:flex; flex-direction:column; gap:3px; align-items:flex-start; font-size:14px; max-height:220px; overflow-y:auto}
 .wentry mark{background:color-mix(in srgb, var(--accent) 45%, transparent); color:inherit; border-radius:3px; padding:0 2px}
+.backup-chip{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--accent); border:1px solid var(--accent); border-radius:20px; padding:2px 4px 2px 12px; white-space:nowrap}
+.persist{border-left:3px solid var(--line); padding:4px 0 4px 12px; display:flex; flex-direction:column; gap:4px}
+.persist.yes{border-left-color:var(--hope)}
+.persist.no, .persist.unsupported{border-left-color:var(--accent)}
 
+
+/* script */
+.script{display:grid; grid-template-columns:minmax(220px,280px) minmax(0,1fr); gap:16px; margin-top:12px; align-items:start}
+.script-side{display:flex; flex-direction:column; gap:2px; position:sticky; top:calc(var(--gm-top-h,62px) + 12px); max-height:calc(100vh - var(--gm-top-h,62px) - 24px); overflow:auto; padding:10px}
+.sc-nav{display:flex; gap:8px; align-items:baseline; text-align:left; background:none; border:0; border-radius:8px; padding:7px 10px; color:var(--ink,inherit); font:inherit; cursor:pointer}
+.sc-nav:hover{background:color-mix(in srgb, var(--line) 45%, transparent)}
+.sc-nav.cur{box-shadow:inset 3px 0 0 var(--accent)}
+.sc-nav.fin{color:var(--muted)}
+.sc-count{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+.script-main{display:flex; flex-direction:column; gap:18px; min-width:0}
+.sc-sec{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px 16px}
+.sc-sec-h{display:flex; gap:8px; align-items:center; margin-bottom:8px}
+.sc-sec-h h3{font-size:22px; margin:0}
+.sc-entry{display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:10px; align-items:start; padding:10px 8px; border-top:1px solid var(--line); border-radius:8px}
+.sc-entry.next{outline:2px solid var(--accent); outline-offset:-2px; background:color-mix(in srgb, var(--accent) 7%, transparent)}
+.sc-entry.done .sc-body{opacity:.45}
+.sc-check{padding-top:3px} .sc-check input{width:18px; height:18px; accent-color:var(--accent)}
+.sc-label{display:flex; gap:10px; align-items:baseline; margin-bottom:2px}
+.sc-kind{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); font-weight:700}
+.sc-text{max-width:78ch} .sc-text p{margin:0 0 8px} .sc-text p:last-child{margin-bottom:0} .sc-text ul{margin:4px 0 8px; padding-left:20px} .sc-text li{margin:2px 0}
+.sc-entry.read .sc-text{font-family:var(--font-display); font-size:19px; line-height:1.55; border-left:3px solid var(--accent); padding-left:14px}
+.sc-edit{opacity:.55} .sc-entry:hover .sc-edit{opacity:1}
+.modal.wide{width:min(760px, calc(100vw - 32px))}
+.script-window .script-side{top:12px; max-height:calc(100vh - 24px)}
+@media (max-width: 900px){ .script{grid-template-columns:1fr} .script-side{position:static; max-height:none} }
+
+/* new-message notices */
+#msg-notices{position:fixed; top:calc(12px + env(safe-area-inset-top, 0px)); left:50%; transform:translateX(-50%); width:min(440px, calc(100vw - 24px)); display:flex; flex-direction:column; gap:8px; z-index:190; pointer-events:none}
+.msg-notice{pointer-events:auto; display:flex; align-items:center; gap:10px; background:var(--panel-2, var(--panel)); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:12px; padding:10px 8px 10px 12px; box-shadow:0 10px 30px rgba(0,0,0,.45); animation:mn-in .32s cubic-bezier(.2,.9,.3,1.25), mn-glow 1.6s ease-out .3s 2}
+.msg-notice.out{animation:mn-out .2s ease-in forwards}
+.msg-notice .face{flex:none}
+.mn-body{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; background:none; border:0; padding:0; text-align:left; color:inherit; font:inherit; cursor:pointer}
+.mn-title{font-weight:700; font-size:15px} .mn-sub{font-weight:400; color:var(--muted); font-size:13px; margin-left:6px}
+.mn-text{font-size:14px; color:var(--ink, inherit); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+.mn-x{flex:none; background:none; border:0; color:var(--muted); font-size:22px; line-height:1; width:36px; height:36px; border-radius:8px; cursor:pointer}
+.mn-x:hover{background:color-mix(in srgb, var(--line) 50%, transparent)}
+@keyframes mn-in{from{opacity:0; transform:translateY(-16px) scale(.97)} to{opacity:1; transform:none}}
+@keyframes mn-out{to{opacity:0; transform:translateY(-10px)}}
+@keyframes mn-glow{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent), 0 10px 30px rgba(0,0,0,.45)} 100%{box-shadow:0 0 0 12px transparent, 0 10px 30px rgba(0,0,0,.45)}}
+.badge.pulse{animation:badge-pulse 1.8s ease-in-out infinite}
+@keyframes badge-pulse{0%,100%{transform:scale(1)} 50%{transform:scale(1.18)}}
+.msg-sound{margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
+@media (prefers-reduced-motion: reduce){ .msg-notice, .msg-notice.out, .badge.pulse{animation:none} }
+
+/* characters */
+.char-pick{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 4px}
+.char-chip{display:flex; align-items:center; gap:8px; padding:5px 12px 5px 5px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:inherit; font:inherit; cursor:pointer}
+.char-chip.on{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
+.char-chip .face{width:30px; height:30px; font-size:15px}
+.char-layout{display:grid; grid-template-columns:minmax(200px,250px) minmax(0,1fr); gap:16px; margin-top:12px; align-items:start}
+.char-side{display:flex; flex-direction:column; gap:2px; position:sticky; top:calc(var(--gm-top-h,62px) + 12px); padding:10px}
+@media (max-width: 900px){ .char-layout{grid-template-columns:1fr} .char-side{position:static} }
 </style>
 </head>
 <body>
@@ -2883,6 +2939,49 @@ function toast(msg, ms = 2600) {
   box.append(t);
   setTimeout(() => t.remove(), ms);
 }
+/* ---------- new-message notices: a card near the top, a soft chime, a short buzz ---------- */
+const Chime = {
+  ctx: null,
+  unlock() { // browsers only allow sound after a tap, so get it ready on the first one
+    try { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); } catch {}
+  },
+  play() {
+    try {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      const t0 = this.ctx.currentTime;
+      [[740, 0], [1110, 0.13]].forEach(([f, dt]) => {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0 + dt); g.gain.exponentialRampToValueAtTime(0.09, t0 + dt + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.45);
+        o.connect(g).connect(this.ctx.destination); o.start(t0 + dt); o.stop(t0 + dt + 0.5);
+      });
+    } catch {}
+  },
+};
+['pointerdown', 'keydown'].forEach((ev) => window.addEventListener(ev, () => Chime.unlock(), { capture: true, passive: true }));
+function alertSoundOn(key) { return LS.get(key, false) === true; } // off unless someone turns it on
+function nudge(soundKey) { // sound and vibration, at most once every few seconds
+  const now = Date.now(); if (now - (nudge.last || 0) < 2500) return; nudge.last = now;
+  if (!alertSoundOn(soundKey)) return;
+  Chime.play();
+  try { if (navigator.vibrate) navigator.vibrate([70, 50, 70]); } catch {}
+}
+/* One card per conversation; a newer message replaces the card's text. Cards stay until opened or closed, or for 25 seconds. */
+function msgNotice({ key, mid, face, title, sub, text, onOpen }) {
+  let box = $('#msg-notices');
+  if (!box) { box = h('div', { id: 'msg-notices', 'aria-live': 'polite' }); document.body.append(box); }
+  const old = box.querySelector(`[data-key="${CSS.escape(key)}"]`); if (old) old.remove();
+  const close = () => { card.classList.add('out'); setTimeout(() => card.remove(), 220); };
+  const card = h('div', { class: 'msg-notice', role: 'status', 'data-key': key, 'data-mid': mid },
+    face, h('button', { class: 'mn-body', onclick: () => { card.remove(); onOpen(); } },
+      h('span', { class: 'mn-title' }, title, sub ? h('span', { class: 'mn-sub' }, sub) : null),
+      h('span', { class: 'mn-text' }, text.length > 110 ? text.slice(0, 110) + '…' : text)),
+    h('button', { class: 'mn-x', 'aria-label': 'Dismiss', onclick: close }, '×'));
+  box.prepend(card);
+  while (box.children.length > 3) box.lastChild.remove();
+  setTimeout(() => { if (card.isConnected) close(); }, 25000);
+}
+function clearNotices(test) { for (const c of [...document.querySelectorAll('.msg-notice')]) if (test(c.dataset.key, c.dataset.mid)) c.remove(); }
 function modal(build) {
   return new Promise((resolve) => {
     const back = h('div', { class: 'modal-back' });
@@ -3496,7 +3595,7 @@ function viewerScreen(view, ctx) {
     const nav = h('nav', { class: 'tabs', 'aria-label': 'Sections' });
     for (const [k, label] of tabs) {
       const b = h('button', { 'aria-current': k === tab ? 'page' : null, onclick: () => ctx.onTab && ctx.onTab(k) }, label);
-      if (k === 'inbox' && ctx.unread) b.append(h('span', { class: 'badge' }, ctx.unread));
+      if (k === 'inbox' && ctx.unread) b.append(h('span', { class: 'badge pulse' }, ctx.unread));
       nav.append(b);
     }
     root.append(nav);
@@ -3525,7 +3624,7 @@ const P = {
   peer: null, conn: null, status: 'wait', statusText: 'Connecting', retryMs: 1500, retryT: null,
   tab: 'board', seen: { msgs: [], reveal: 0 }, notebook: { pages: [] }, page: null,
   lastFear: null, assetWait: new Set(), revealOpen: false, msgOpen: false,
-  thread: null, composeTo: [], drafts: {}, pending: [], notified: new Set(),
+  thread: null, composeTo: [], drafts: {}, pending: [], notified: new Set(), bootAt: Date.now(),
 };
 const pKey = (k) => `hdoc.p.${k}.${P.code}`;
 
@@ -3733,14 +3832,21 @@ function checkPopups() {
   const viewingKey = P.tab === 'inbox' ? P.thread : null;
   const unseen = v.messages.filter((m) => m.from !== v.me && !seen.has(m.id) && threadKey(msgParts(m)) !== viewingKey).sort((a, b) => a.at - b.at);
   // Messages between players arrive quietly: a badge and a short notice.
+  clearNotices((key, mid) => seen.has(mid) || key === viewingKey);
+  let fresh1 = false; const recent = (m) => m.at > P.bootAt - 3000; // no chime for messages that were waiting when the page opened
   for (const m of unseen) if (m.from !== 'gm' && !P.notified.has(m.id)) {
-    P.notified.add(m.id);
-    toast(`${whoName(m.from, v.roster)}: ${m.text.length > 70 ? m.text.slice(0, 70) + '…' : m.text}`, 4500);
+    P.notified.add(m.id); if (recent(m)) fresh1 = true;
+    const parts = msgParts(m), key = threadKey(parts), others = parts.filter((x) => x !== v.me && x !== m.from);
+    msgNotice({ key, mid: m.id, face: whoFace(m.from, v.roster), title: `${whoName(m.from, v.roster)}`,
+      sub: others.length ? `to you and ${others.map((id) => whoName(id, v.roster)).join(', ')}` : 'to you', text: m.text,
+      onOpen: () => { openThread(key); renderP(); window.scrollTo(0, document.body.scrollHeight); } });
   }
+  if (fresh1) nudge(pKey('msgSound'));
   // Messages from the GM pop up.
   const fresh = unseen.find((m) => m.from === 'gm');
   if (fresh) {
     P.msgOpen = true;
+    if (recent(fresh)) nudge(pKey('msgSound'));
     const parts = msgParts(fresh), key = threadKey(parts);
     const others = parts.filter((p) => p !== 'gm' && p !== v.me);
     modal((box, close) => {
@@ -3846,7 +3952,8 @@ function messagesPanel() {
         h('span', { class: 'ti-body' }, h('span', { class: 'ti-title' }, threadTitle(t.parts, me, roster)),
           h('span', { class: 'ti-snip' }, t.last.from === me ? 'You' : whoName(t.last.from, roster), ': ', t.last.text)),
         h('span', { class: 'ti-side' }, h('span', { class: 'when' }, t.last.pending ? 'Sending…' : fmtTime(t.last.at)), n ? h('span', { class: 'badge' }, n) : null));
-    })) : h('p', { class: 'empty' }, opts.send ? 'No messages yet. Messages from the GM pop up on your screen; you can also write to the GM or to other players.' : 'Private messages from the GM will appear here.'));
+    })) : h('p', { class: 'empty' }, opts.send ? 'No messages yet. Messages from the GM pop up on your screen; you can also write to the GM or to other players.' : 'Private messages from the GM will appear here.'),
+    h('div', { class: 'msg-sound' }, switchEl('Sound and vibration for new messages', alertSoundOn(pKey('msgSound')), (val) => { LS.set(pKey('msgSound'), val); if (val) { Chime.unlock(); setTimeout(() => Chime.play(), 60); } renderP(); })));
 }
 
 /* ---------- notes ---------- */
@@ -3895,6 +4002,7 @@ function renderP() {
   const seen = new Set(P.seen.msgs || []);
   const unread = (v.messages || []).filter((m) => m.from !== v.me && !seen.has(m.id)).length;
   const me = (v.roster || []).find((r) => r.id === v.me);
+  if (P.role === 'player') document.title = (unread ? `(${unread}) ` : '') + (v.title || APP.name);
   const menu = P.role === 'player' ? h('button', { class: 'btn ghost icon-btn', title: 'Options', 'aria-label': 'Options', onclick: () => {
     modal((box, close) => box.append(h('h3', null, me ? `Playing ${me.name}` : 'Options'),
       h('div', { class: 'stack' },
@@ -3953,18 +4061,21 @@ async function startGM() {
   G.S = migrateState(LS.get('hdoc.gm.state', null) || defaultState());
   G.notes = LS.get('hdoc.gm.notes', {});
   wikiLoad();
+  scriptLoad();
   normalizeGroups();
   await seedContent();
   saveGM();
   // The wiki can be popped out into its own window; both windows share this browser's storage.
   window.addEventListener('storage', (e) => {
     if (e.key === 'hdoc.gm.wiki') { wikiLoad(); AssetStore.all().then(() => { if (G.section === 'wiki' && !typing()) renderGM(); }); }
+    if (e.key === SCRIPT_KEY) { scriptLoad(); if (G.section === 'script' && !typing() && !document.querySelector('.modal-back')) renderGM(); }
     if (e.key === 'hdoc.gm.wikiReq' && e.newValue) { try { const r = JSON.parse(e.newValue); if (r.show) applyWikiShow(r.show); else if (r.hide) hideWikiShow(); } catch {} }
   });
   applyTheme(G.S.theme);
   document.title = 'GM — ' + (G.S.title || APP.name);
   renderGM();
   hostPeer();
+  requestPersist();
   // Heartbeat: keeps phones' connections honest and clears out devices that have gone away.
   setInterval(() => {
     const now = Date.now();
@@ -3980,7 +4091,49 @@ async function startGM() {
     else if (e.key === '-' || e.key === '_') { e.preventDefault(); setFear(G.S.fear.value - 1); }
   });
 }
-function saveGM() { LS.set('hdoc.gm.state', G.S); }
+function saveGM() { LS.set('hdoc.gm.state', G.S); markChanged(); }
+
+/* ---------- keeping data safe: backups and persistent storage ---------- */
+const markChanged = debounce(() => LS.set('hdoc.gm.lastChange', Date.now()), 1500);
+async function exportBackup() {
+  const S = G.S;
+  const assets = await AssetStore.all();
+  const used = collectAssetIds({ S, W: G.W });
+  const blob = new Blob([JSON.stringify({ app: 'helianthus-table', version: APP.version, exported: Date.now(), state: S, notes: G.notes, wiki: G.W, script: G.SC, assets: assets.filter((a) => used.has(a.id)) })], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: `helianthus-table-backup-${new Date().toISOString().slice(0, 10)}.json` });
+  document.body.append(a); a.click(); a.remove();
+  LS.set('hdoc.gm.lastBackup', Date.now()); LS.del('hdoc.gm.backupSnooze');
+  toast('Backup saved to your downloads.');
+  renderGM();
+}
+const DAY = 86400000;
+function backupDue() {
+  const last = LS.get('hdoc.gm.lastBackup', 0), changed = LS.get('hdoc.gm.lastChange', 0);
+  if (Date.now() < LS.get('hdoc.gm.backupSnooze', 0)) return false;
+  if (changed <= last) return false;              // nothing new since the last backup
+  return !last || Date.now() - last > 7 * DAY;
+}
+function backupChip() {
+  if (!backupDue()) return null;
+  const last = LS.get('hdoc.gm.lastBackup', 0);
+  const days = last ? Math.floor((Date.now() - last) / DAY) : 0;
+  return h('span', { class: 'backup-chip', role: 'status' },
+    last ? `Last backup ${days} days ago` : 'Not backed up yet',
+    h('button', { class: 'btn small primary', onclick: exportBackup }, 'Back up now'),
+    h('button', { class: 'btn small ghost', title: 'Remind me tomorrow', onclick: () => { LS.set('hdoc.gm.backupSnooze', Date.now() + DAY); renderGM(); } }, 'Later'));
+}
+/* Ask the browser not to clear this site's storage on its own. */
+async function requestPersist(again) {
+  const st = navigator.storage;
+  if (!st || !st.persist) { G.persist = 'unsupported'; return; }
+  try {
+    let ok = await st.persisted();
+    if (!ok) ok = await st.persist();
+    G.persist = ok ? 'yes' : 'no';
+  } catch { G.persist = 'no'; }
+  if (again) { toast(G.persist === 'yes' ? 'This browser will keep your data.' : 'The browser said not yet. See the note below.'); }
+  if (G.section === 'room' && !typing()) renderGM();
+}
 
 /* Built-in content (player-safe only: the page itself is public). Added once; deleting it keeps it deleted. */
 async function seedContent() {
@@ -4169,8 +4322,14 @@ function onPlayerSay(c, msg) {
   if (viewing) S.msgRead[key] = now;
   saveGM(); broadcastSoon();
   if (G.section === 'messages') renderGM();
-  else { const nav = $('.gm-nav'); if (nav) nav.replaceWith(gmNav()); refreshPreview(); }
-  if (to.includes('gm') && !viewing) toast(`${whoName(me, S.roster)}: ${text.length > 90 ? text.slice(0, 90) + '…' : text}`, 5000);
+  else { const nav = $('.gm-nav'); if (nav) nav.replaceWith(gmNav()); refreshPreview(); gmTitle(); }
+  if (to.includes('gm') && !viewing) {
+    const others = to.filter((x) => x !== 'gm');
+    msgNotice({ key, mid: S.messages[S.messages.length - 1].id, face: whoFace(me, S.roster), title: whoName(me, S.roster),
+      sub: others.length ? `to you and ${others.map((id) => whoName(id, S.roster)).join(', ')}` : 'to you', text,
+      onOpen: () => { G.section = 'messages'; G.msgThread = key; G.scrollThread = true; S.msgRead[key] = Date.now(); saveGM(); renderGM(); } });
+    nudge('hdoc.gm.msgSound');
+  }
 }
 
 /* What a given viewer is allowed to see. Anything hidden never leaves this browser. */
@@ -4246,6 +4405,8 @@ const SECTIONS = [
   { id: 'map', label: 'Map', mod: 'map' },
   { id: 'adversaries', label: 'Adversaries', gmOnly: true },
   { id: 'wiki', label: 'Wiki', gmOnly: true },
+  { id: 'characters', label: 'Characters', gmOnly: true },
+  { id: 'script', label: 'Script', gmOnly: true },
   { head: 'Share' },
   { id: 'handouts', label: 'Handouts', mod: 'handouts' },
   { id: 'messages', label: 'Messages', mod: 'messages' },
@@ -4261,14 +4422,18 @@ function renderGM() {
   const old = $('.thread-pane .thread');
   const near = !old || old.scrollHeight - old.scrollTop - old.clientHeight < 60, oldTop = old ? old.scrollTop : 0;
   const main = sectionEl(); // first: opening a conversation marks it read before the nav badge is counted
+  G.lastSection = G.section;
   keepFocus(() => appRoot().replaceChildren(h('div', { class: 'gm' }, gmTop(), gmNav(), h('main', { class: 'gm-main', id: 'gm-main' }, main))));
   window.scrollTo(0, y);
   const top = $('.gm-top'); if (top) document.documentElement.style.setProperty('--gm-top-h', top.offsetHeight + 'px');
   const t = $('.thread-pane .thread');
   if (t) t.scrollTop = G.scrollThread || near ? t.scrollHeight : oldTop;
   G.scrollThread = false;
+  if (G.section === 'messages' && G.msgThread) clearNotices((k) => k === G.msgThread);
+  gmTitle();
   refreshPreview();
 }
+function gmTitle() { const n = gmUnreadTotal(); document.title = (n ? `(${n}) ` : '') + 'GM — ' + (G.S.title || APP.name); }
 
 function gmTop() {
   const S = G.S;
@@ -4279,6 +4444,7 @@ function gmTop() {
       h('button', { class: 'btn small ghost', onclick: () => { G.section = 'room'; renderGM(); } }, 'Invite')),
     h('span', { id: 'gm-status', class: 'status ' + G.status }, h('i'), G.statusText),
     h('div', { class: 'conns', id: 'gm-conns' }, connFaces()),
+    backupChip(),
     S.wikiShow ? h('span', { class: 'showing', title: 'Players are looking at this wiki card' }, 'Showing: ', h('b', null, S.wikiShow.title),
       h('button', { class: 'btn small ghost', 'aria-label': 'Take the card down', onclick: hideWikiShow }, '✕')) : null,
     h('div', { class: 'gm-fear' },
@@ -4328,6 +4494,8 @@ function sectionEl() {
     case 'map': return secMap();
     case 'adversaries': return secAdversaries();
     case 'wiki': return secWiki();
+    case 'characters': return secCharacters();
+    case 'script': return secScript();
     case 'handouts': return secHandouts();
     case 'messages': return secMessages();
     case 'notes': return secNotes();
@@ -4655,7 +4823,8 @@ function secMessages() {
 
   const rules = h('div', { class: 'row', style: { gap: '22px', margin: '10px 0 4px' } },
     switchEl('Players can send messages', S.msgOpts.playersSend, (v) => { S.msgOpts.playersSend = v; commit(); }),
-    S.msgOpts.playersSend ? switchEl('Players can message each other', S.msgOpts.playerToPlayer, (v) => { S.msgOpts.playerToPlayer = v; commit(); }) : null);
+    S.msgOpts.playersSend ? switchEl('Players can message each other', S.msgOpts.playerToPlayer, (v) => { S.msgOpts.playerToPlayer = v; commit(); }) : null,
+    switchEl('Chime when a message comes to me', alertSoundOn('hdoc.gm.msgSound'), (v) => { LS.set('hdoc.gm.msgSound', v); if (v) { Chime.unlock(); setTimeout(() => Chime.play(), 60); } renderGM(); }));
 
   const list = h('div', { class: 'thread-list' },
     h('button', { class: 'btn' + (cur ? '' : ' primary'), onclick: () => { G.msgThread = 'new'; renderGM(); } }, 'New message'),
@@ -4800,14 +4969,6 @@ function secRoom() {
   const link = base ? `${base}?room=${S.room}${peerQ ? '&peer=' + peerQ : ''}` : null;
   const tableLink = link ? link + '#table' : null;
   const copy = async (txt) => { try { await navigator.clipboard.writeText(txt); toast('Copied.'); } catch { promptText('Copy this link', 'Link', txt, 'Done'); } };
-  const exportBackup = async () => {
-    const assets = await AssetStore.all();
-    const used = collectAssetIds({ S, W: G.W });
-    const blob = new Blob([JSON.stringify({ app: 'helianthus-table', version: APP.version, exported: Date.now(), state: S, notes: G.notes, wiki: G.W, assets: assets.filter((a) => used.has(a.id)) })], { type: 'application/json' });
-    const a = h('a', { href: URL.createObjectURL(blob), download: `helianthus-table-backup-${new Date().toISOString().slice(0, 10)}.json` });
-    document.body.append(a); a.click(); a.remove();
-    toast('Backup saved to your downloads.');
-  };
   const importBackup = async () => {
     const [f] = await pickFile('application/json,.json'); if (!f) return;
     let data; try { data = JSON.parse(await f.text()); } catch { toast('That file isn’t a backup from this app.'); return; }
@@ -4816,7 +4977,9 @@ function secRoom() {
     for (const a of data.assets || []) await AssetStore.put(a);
     G.S = migrateState(data.state); G.notes = data.notes || {};
     LS.set('hdoc.gm.notes', G.notes);
-    if (data.wiki && Array.isArray(data.wiki.entries)) { G.W = { entries: data.wiki.entries.map(wikiNorm) }; wikiSave(); } normalizeGroups(); applyTheme(G.S.theme); commit(); hostPeer();
+    if (data.wiki && Array.isArray(data.wiki.entries)) { G.W = { entries: data.wiki.entries.map(wikiNorm) }; wikiSave(); }
+    if (data.script && data.script.scripts) { G.SC = data.script; scriptSave(); }
+    LS.set('hdoc.gm.lastBackup', Date.now()); normalizeGroups(); applyTheme(G.S.theme); commit(); hostPeer();
     toast('Backup restored.');
   };
   const est = h('span', { class: 'small-text muted' });
@@ -4838,8 +5001,16 @@ function secRoom() {
         stepper('Maximum', S.fear.max, () => { S.fear.max = clamp(S.fear.max - 1, 1, 20); S.fear.value = Math.min(S.fear.value, S.fear.max); commit(); }, () => { S.fear.max = clamp(S.fear.max + 1, 1, 20); commit(); }),
         h('p', { class: 'hint' }, 'Tip: with nothing selected, the + and − keys change Fear.')),
       h('div', { class: 'panel stack' }, h('h3', null, 'Backup'),
-        h('p', { class: 'hint' }, 'Everything lives in this browser on this computer. Export a backup now and then — and before switching computers or clearing browser data.'),
-        h('div', { class: 'row' }, h('button', { class: 'btn small primary', onclick: exportBackup }, 'Export backup'), h('button', { class: 'btn small', onclick: importBackup }, 'Import backup')), est),
+        h('p', { class: 'hint' }, 'Everything lives in this browser on this computer: clocks, maps, the wiki, players’ notes. Export a backup now and then, and before switching computers or clearing browser data. A backup holds all of it, including your own wiki edits.'),
+        h('div', { class: 'row' }, h('button', { class: 'btn small primary', onclick: exportBackup }, 'Export backup'), h('button', { class: 'btn small', onclick: importBackup }, 'Import backup')),
+        h('p', { class: 'small-text' }, (() => { const l = LS.get('hdoc.gm.lastBackup', 0); return l ? `Last backup: ${fmtTime(l)}.` : 'No backup yet from this browser.'; })(),
+          ' The console reminds you when it has been more than a week and something has changed.'), est,
+        h('div', { class: 'persist ' + (G.persist || '') },
+          h('b', null, G.persist === 'yes' ? 'Protected from automatic clearing' : G.persist === 'unsupported' ? 'This browser can’t protect its storage' : 'Not protected from automatic clearing yet'),
+          h('p', { class: 'hint' }, G.persist === 'yes'
+            ? 'This browser has agreed not to clear the console’s data on its own, even when the disk runs low. Clearing “cookies and site data” yourself still erases it, so keep backing up.'
+            : 'Browsers can clear a site’s storage on their own when the disk is nearly full. Chrome and Edge grant protection to sites you use often or bookmark; Firefox asks you. Bookmark your console, then ask again.'),
+          G.persist === 'yes' ? null : h('div', null, h('button', { class: 'btn small', onclick: () => requestPersist(true) }, 'Ask again')))),
       h('div', { class: 'panel stack' }, h('h3', null, 'GM pack'),
         h('p', { class: 'hint' }, 'Wiki entries and GM versions of maps arrive as a separate file, because this page is public and anyone can read what’s built into it. Importing adds to what you have.'),
         h('div', null, h('button', { class: 'btn small', onclick: importGMPack }, 'Import GM pack'))),
@@ -4849,7 +5020,7 @@ function secRoom() {
           h('button', { class: 'btn small', onclick: async () => { if (await ask('Make a new room code?', 'Connected players will be dropped and need the new link.', 'New code')) { S.room = newCode(); commit(); hostPeer(); } } }, 'New room code'),
           h('button', { class: 'btn small danger', onclick: async () => {
             if (!(await ask('Start over?', 'This erases every scenario, clock, handout, map, message, wiki entry, setting, and notes backup in this browser. Export a backup first if you might want any of it.', 'Erase everything', true))) return;
-            await AssetStore.clear(); LS.del('hdoc.gm.state'); LS.del('hdoc.gm.notes'); LS.del(WIKI_KEY); location.reload();
+            await AssetStore.clear(); LS.del('hdoc.gm.state'); LS.del('hdoc.gm.notes'); LS.del(WIKI_KEY); LS.del(SCRIPT_KEY); location.reload();
           } }, 'Start over'))),
       h('p', { class: 'small-text muted' }, `${APP.name} ${APP.version}`)));
 }
@@ -4963,7 +5134,9 @@ function secAdversaries() {
       h('details', { open: e.open, ontoggle: (ev) => { e.open = ev.target.open; saveGM(); } }, h('summary', null, 'Stat block'), statBlockEl(t, { live: true })));
   });
   const defeated = A.active.filter((e) => e.hpMarked >= e.tpl.hp).length;
-  const lib = A.library.map((t, i) => h('div', { class: 'panel adv-lib' },
+  const shown = (t) => G.advAll || !t.scenario || t.scenario === S.scenario;
+  const elsewhere = A.library.filter((t) => !shown(t)).length;
+  const lib = A.library.map((t, i) => !shown(t) ? null : h('div', { class: 'panel adv-lib' },
     h('div', { class: 'row', style: { justifyContent: 'space-between' } },
       h('div', null, h('b', { style: { fontFamily: 'var(--font-display)', fontSize: '19px', fontWeight: '400' } }, t.name), h('div', { class: 'small-text muted' }, `Tier ${t.tier} ${t.type}, HP ${t.hp}, Stress ${t.stress}, Difficulty ${t.difficulty}`)),
       h('div', { class: 'row', style: { gap: '6px' } },
@@ -4983,7 +5156,9 @@ function secAdversaries() {
     h('div', { class: 'row', style: { justifyContent: 'space-between', margin: '30px 0 10px' } },
       h('h3', { style: { fontSize: '22px' } }, 'Stat blocks'),
       h('button', { class: 'btn small', onclick: () => editAdversary(null) }, 'New stat block')),
-    h('div', { class: 'stack' }, lib.length ? lib : h('p', { class: 'empty' }, 'No stat blocks yet.')));
+    h('div', { class: 'stack' }, lib.some(Boolean) ? lib : h('p', { class: 'empty' }, 'No stat blocks yet.')),
+    elsewhere || G.advAll ? h('div', { class: 'toolbar' }, h('button', { class: 'btn small ghost', onclick: () => { G.advAll = !G.advAll; renderGM(); } },
+      G.advAll ? 'Show only this scenario’s stat blocks' : `Show ${elsewhere} from other scenarios`)) : null);
 }
 async function editAdversary(orig) {
   const A = G.S.adversaries;
@@ -5025,7 +5200,7 @@ async function editAdversary(orig) {
   t.hp = clamp(Math.round(t.hp) || 1, 1, 40); t.stress = clamp(Math.round(t.stress) || 0, 0, 20);
   t.tier = Number(t.tier) || 1;
   if (orig) {
-    Object.assign(orig, t);
+    Object.assign(orig, t); orig.edited = true;
     for (const e of A.active) if (e.tpl.id === orig.id) { e.tpl = clone(orig); e.hpMarked = Math.min(e.hpMarked, e.tpl.hp); e.stressMarked = Math.min(e.stressMarked, e.tpl.stress); }
   } else A.library.push(t);
   commit();
@@ -5038,7 +5213,7 @@ async function editAdversary(orig) {
    can be shown to players, and then only its player-safe text
    travels.
    ============================================================ */
-const WIKI_CATS = ['Party', 'People', 'Places', 'Factions', 'Lore', 'Creatures', 'Items', 'Campaign'];
+const WIKI_CATS = ['Party', 'Characters', 'People', 'Places', 'Factions', 'Lore', 'Creatures', 'Items', 'Campaign'];
 const WIKI_KEY = 'hdoc.gm.wiki';
 
 function wikiLoad() {
@@ -5047,6 +5222,7 @@ function wikiLoad() {
 }
 function wikiSave() {
   if (!LS.set(WIKI_KEY, G.W)) toast('The wiki couldn’t be saved. This browser’s storage may be full.');
+  if (!G.wikiWindow) markChanged(); else LS.set('hdoc.gm.lastChange', Date.now());
 }
 function wikiNorm(e) {
   const list = (v) => (Array.isArray(v) ? v : String(v || '').split(',')).map((x) => String(x).trim()).filter(Boolean);
@@ -5057,6 +5233,7 @@ function wikiNorm(e) {
     summary: String(e.summary || ''), audience: String(e.audience || ''), body: String(e.body || ''),
     asset: e.asset || null, at: Number(e.at) || Date.now(),
     pack: !!e.pack, edited: !!e.edited, // pack entries update on the next import unless you've edited them
+    ...(e.pc ? { pc: String(e.pc), page: String(e.page || ''), order: Number(e.order) || 0 } : {}), // a character page
   };
 }
 const wFind = (id) => G.W.entries.find((e) => e.id === id);
@@ -5262,6 +5439,34 @@ async function importGMPack() {
     retired = before - G.W.entries.length;
   }
   wikiSave();
+  let advAdded = 0, advUpdated = 0, scAdded = 0, mapsAdded = 0; const scripts = { added: 0, updated: 0, kept: 0 };
+  if (!G.wikiWindow && Array.isArray(data.adversaries)) { // stat blocks: refreshed unless you've edited them
+    const A = G.S.adversaries;
+    for (const t0 of data.adversaries) {
+      if (!t0 || !t0.id) continue;
+      const t = { ...blankAdversary(), ...clone(t0), pack: true };
+      const i = A.library.findIndex((x) => x.id === t.id);
+      if (i < 0) { A.library.push(t); advAdded++; } else if (!A.library[i].edited) { A.library[i] = t; advUpdated++; }
+    }
+  }
+  if (!G.wikiWindow && Array.isArray(data.scenarios)) { // scenarios: added if new; their maps added if missing. Your clocks and fights are never touched.
+    const S = G.S;
+    for (const s0 of data.scenarios) {
+      if (!s0 || !s0.id) continue;
+      let sc = S.scenarios.find((x) => x.id === s0.id);
+      if (!sc) { sc = { ...blankScenario(s0.name), id: s0.id, clocks: clone(s0.clocks || []) }; S.scenarios.push(sc); scAdded++; }
+      const live = sc.id === S.scenario;
+      const maps = live ? S.maps : (sc.maps = sc.maps || []);
+      for (const m0 of s0.maps || []) {
+        const m = maps.find((x) => x.id === m0.id);
+        if (!m) { maps.push({ grid: false, gridN: 16, tokens: [], gmAsset: null, ...clone(m0) }); mapsAdded++; } else if (m0.gmAsset) m.gmAsset = m0.gmAsset;
+      }
+      if (live) { if (!S.activeMap && S.maps[0]) S.activeMap = S.maps[0].id; } else if (!sc.activeMap && sc.maps[0]) sc.activeMap = sc.maps[0].id;
+      if (Array.isArray(s0.script) && s0.script.length) scripts[importScript(s0.id, s0.script)]++;
+    }
+    if (scripts.added || scripts.updated || scripts.kept) scriptSave();
+  }
+  if (advAdded || advUpdated || scAdded || mapsAdded) commit();
   let layers = 0;
   if (!G.wikiWindow && Array.isArray(data.mapLayers)) {
     const S = G.S;
@@ -5269,7 +5474,7 @@ async function importGMPack() {
     for (const l of data.mapLayers) { const m = allMaps.find((x) => x.id === l.map); if (m && l.gmAsset) { m.gmAsset = l.gmAsset; layers++; } }
     if (layers) saveGM();
   }
-  toast([added && `${added} added`, updated && `${updated} updated`, kept && `${kept} of yours kept`, retired && `${retired} retired`, layers && `${layers} GM map${layers > 1 ? 's' : ''} attached`].filter(Boolean).join(', ') || 'Nothing new in that file.', 5000);
+  toast([added && `${added} added`, updated && `${updated} updated`, kept && `${kept} of yours kept`, retired && `${retired} retired`, layers && `${layers} GM map${layers > 1 ? 's' : ''} attached`, scAdded && `${scAdded} scenario${scAdded > 1 ? 's' : ''} added`, mapsAdded && `${mapsAdded} map${mapsAdded > 1 ? 's' : ''} added`, (advAdded || advUpdated) && `${advAdded + advUpdated} stat block${advAdded + advUpdated > 1 ? 's' : ''} ${advAdded ? 'added' : 'updated'}`, scripts.added && 'script added', scripts.updated && 'script updated', scripts.kept && 'your edited script kept'].filter(Boolean).join(', ') || 'Nothing new in that file.', 5000);
   wRerender();
 }
 
@@ -5392,6 +5597,266 @@ function renderWikiWindow() {
 }
 
 
+
+/* ============================================================
+   Script: each scenario's read-alouds and GM notes in session order, to tick off as you go.
+   Kept in its own storage key (like the wiki) so it can pop out into a second window (#script).
+   GM only: never sent to players. Scripts arrive in GM packs, or you write them here.
+   ============================================================ */
+const SCRIPT_KEY = 'hdoc.gm.script';
+function scriptLoad() {
+  const v = LS.get(SCRIPT_KEY, null);
+  G.SC = v && typeof v === 'object' && v.scripts ? v : { scripts: {} };
+}
+function scriptSave() {
+  if (!LS.set(SCRIPT_KEY, G.SC)) toast('The script couldn’t be saved. This browser’s storage may be full.');
+  if (G.scriptWindow) LS.set('hdoc.gm.lastChange', Date.now()); else markChanged();
+}
+const scriptView = () => (G.scv = G.scv || { hideDone: false });
+function scenarioId() { return G.S && G.S.scenario; }
+function curScript() { return G.SC.scripts[scenarioId()] || null; }
+function freshSections(secs) { // a pack's sections, with ids and nothing ticked
+  return (secs || []).map((s) => ({ id: s.id || 'ss' + uid(), title: s.title || 'Section',
+    entries: (s.entries || []).map((e) => ({ id: e.id || 'se' + uid(), type: e.type === 'read' ? 'read' : 'note', label: e.label || '', text: e.text || '', done: false })) }));
+}
+/* From a GM pack: new scripts are added; unedited ones refresh (keeping your ticks); edited ones keep your version. */
+function importScript(scId, secs) {
+  const cur = G.SC.scripts[scId];
+  const orig = freshSections(secs);
+  if (!cur) { G.SC.scripts[scId] = { sections: clone(orig), orig, edited: false }; return 'added'; }
+  cur.orig = orig;
+  if (cur.edited) return 'kept';
+  const ticked = new Set(cur.sections.flatMap((s) => s.entries.filter((e) => e.done).map((e) => e.id)));
+  cur.sections = clone(orig);
+  for (const s of cur.sections) for (const e of s.entries) e.done = ticked.has(e.id);
+  return 'updated';
+}
+function scriptCommit(edited) {
+  const sc = curScript(); if (sc && edited) sc.edited = true;
+  scriptSave(); rerenderScript();
+}
+function rerenderScript() { if (G.scriptWindow) renderScriptWindow(); else renderGM(); }
+
+/* light markup: **bold**, *italic*, "- " bullets, a blank line for a new paragraph */
+function scInline(t) {
+  const out = []; const re = /\*\*([^*]+)\*\*|\*([^*]+)\*/g; let i = 0, m;
+  while ((m = re.exec(t))) { if (m.index > i) out.push(t.slice(i, m.index)); out.push(m[1] != null ? h('b', null, m[1]) : h('i', null, m[2])); i = re.lastIndex; }
+  if (i < t.length) out.push(t.slice(i));
+  return out;
+}
+function scBody(text) {
+  const wrap = h('div', { class: 'sc-text' }); let list = null;
+  for (const raw of String(text || '').split('\n')) {
+    const line = raw.trimEnd();
+    if (/^\s*[-•] /.test(line)) { if (!list) { list = h('ul'); wrap.append(list); } list.append(h('li', null, ...scInline(line.replace(/^\s*[-•] /, '')))); continue; }
+    if (/^\s{2,}\S/.test(line) && list && list.lastChild) { list.lastChild.append(' ', ...scInline(line.trim())); continue; }
+    list = null;
+    if (line.trim()) wrap.append(h('p', null, ...scInline(line)));
+  }
+  return wrap;
+}
+function scCounts(s) { return [s.entries.filter((e) => e.done).length, s.entries.length]; }
+function nextUnchecked(sc) {
+  for (const s of sc.sections) { const e = s.entries.find((x) => !x.done); if (e) return e; }
+  return null;
+}
+function scScrollTo(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY - (G.scriptWindow ? 16 : (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gm-top-h')) || 62) + 16);
+  window.scrollTo({ top, behavior: 'smooth' });
+}
+
+async function editEntry(sec, e) {
+  const isNew = !e;
+  const d = e ? clone(e) : { id: 'se' + uid(), type: 'note', label: '', text: '', done: false };
+  const ok = await modal((box, close) => {
+    const label = h('input', { type: 'text', value: d.label, placeholder: 'Optional, e.g. The order' });
+    label.addEventListener('input', () => { d.label = label.value; });
+    const type = h('select', { onchange: (ev) => { d.type = ev.target.value; } },
+      h('option', { value: 'read', selected: d.type === 'read' ? 'selected' : null }, 'Read-aloud'),
+      h('option', { value: 'note', selected: d.type === 'note' ? 'selected' : null }, 'GM note'));
+    const ta = h('textarea', { rows: '10', style: { width: '100%' }, autofocus: true }); ta.value = d.text;
+    ta.addEventListener('input', () => { d.text = ta.value; });
+    box.classList.add('wide');
+    box.append(h('h3', null, isNew ? 'New entry' : 'Edit entry'),
+      h('div', { class: 'row', style: { gap: '10px' } }, h('label', { class: 'field grow' }, h('span', null, 'Label'), label), h('label', { class: 'field' }, h('span', null, 'Type'), type)),
+      h('label', { class: 'field' }, h('span', null, 'Text'), ta),
+      h('p', { class: 'hint' }, '**bold**, *italic*, “- ” for a bullet, and a blank line for a new paragraph.'),
+      h('div', { class: 'row', style: { justifyContent: 'space-between' } },
+        isNew ? h('span') : h('div', { class: 'row', style: { gap: '6px' } },
+          h('button', { class: 'btn small ghost', onclick: () => close('up') }, 'Move up'),
+          h('button', { class: 'btn small ghost', onclick: () => close('down') }, 'Move down'),
+          h('button', { class: 'btn small ghost danger', onclick: () => close('delete') }, 'Delete')),
+        h('div', { class: 'row', style: { gap: '6px' } },
+          h('button', { class: 'btn ghost', onclick: () => close(null) }, 'Cancel'),
+          h('button', { class: 'btn primary', onclick: () => close('save') }, 'Save'))));
+  });
+  if (!ok) return;
+  const i = e ? sec.entries.indexOf(e) : -1;
+  if (ok === 'save') { if (isNew) sec.entries.push(d); else Object.assign(e, d); }
+  else if (ok === 'delete') { if (!(await ask('Delete this entry?', d.label || d.text.slice(0, 80), 'Delete', true))) return; sec.entries.splice(i, 1); }
+  else if (ok === 'up' && i > 0) sec.entries.splice(i - 1, 0, sec.entries.splice(i, 1)[0]);
+  else if (ok === 'down' && i < sec.entries.length - 1) sec.entries.splice(i + 1, 0, sec.entries.splice(i, 1)[0]);
+  else return;
+  scriptCommit(true);
+}
+
+function secScript() {
+  const v = scriptView();
+  const scName = (G.S && (G.S.scenarios.find((x) => x.id === G.S.scenario) || {}).name) || 'this scenario';
+  let sc = curScript();
+  const head = G.scriptWindow ? null : secHead('Script', null, `Read-alouds and GM notes for ${scName}, in session order. Only you see it.`);
+  const addSection = async () => {
+    const t = await promptText('New section', 'Section name'); if (!t) return;
+    if (!sc) sc = G.SC.scripts[scenarioId()] = { sections: [], orig: null, edited: true };
+    sc.sections.push({ id: 'ss' + uid(), title: t, entries: [] }); scriptCommit(true);
+  };
+  const popBtn = G.scriptWindow ? null : h('button', { class: 'btn small ghost', title: 'Open the script in its own window, for a second screen',
+    onclick: () => window.open(location.pathname + location.search + '#script', 'helianthus-script', 'width=1100,height=900') }, 'Pop out');
+  if (!sc || !sc.sections.length) {
+    return h('div', null, head, h('div', { class: 'panel', style: { marginTop: '12px' } },
+      h('p', { class: 'empty' }, `No script for ${scName} yet. A GM pack can bring one in, or you can start one here.`),
+      h('div', { class: 'toolbar' }, h('button', { class: 'btn small primary', onclick: addSection }, '+ Add section'), popBtn)));
+  }
+  const next = nextUnchecked(sc);
+  const [done, total] = sc.sections.reduce((a, s) => { const [d, t] = scCounts(s); return [a[0] + d, a[1] + t]; }, [0, 0]);
+  const visible = sc.sections.filter((s) => !(v.hideDone && scCounts(s)[0] === scCounts(s)[1] && scCounts(s)[1] > 0));
+  const tools = h('div', { class: 'toolbar' },
+    h('button', { class: 'btn small primary', disabled: !next, onclick: () => { if (next) { if (v.hideDone) rerenderScript(); scScrollTo('se-' + next.id); } } }, 'Next unchecked'),
+    switchEl('Hide finished sections', v.hideDone, (val) => { v.hideDone = val; rerenderScript(); }),
+    h('span', { class: 'small-text muted', style: { alignSelf: 'center' } }, `${done} of ${total} done`),
+    h('span', { class: 'grow' }),
+    popBtn,
+    h('button', { class: 'btn small ghost', disabled: !done, onclick: async () => {
+      if (await ask('Untick everything?', 'Every entry in this script goes back to unchecked. Your edits stay.', 'Untick all')) { for (const s of sc.sections) for (const e of s.entries) e.done = false; scriptCommit(false); }
+    } }, 'Untick all'),
+    sc.orig ? h('button', { class: 'btn small ghost danger', onclick: async () => {
+      if (await ask('Restore the original script?', 'Your edits and ticks in this script are replaced by the version from the GM pack.', 'Restore', true)) { sc.sections = clone(sc.orig); sc.edited = false; scriptCommit(false); }
+    } }, 'Restore original') : null);
+
+  const side = h('nav', { class: 'script-side panel', 'aria-label': 'Script sections' },
+    sc.sections.map((s) => {
+      const [d, t] = scCounts(s); const fin = t > 0 && d === t;
+      return h('button', { class: 'sc-nav' + (fin ? ' fin' : '') + (next && s.entries.includes(next) ? ' cur' : ''), onclick: () => {
+        if (v.hideDone && fin) { v.hideDone = false; rerenderScript(); }
+        scScrollTo('ss-' + s.id);
+      } }, h('span', { class: 'grow' }, s.title), h('span', { class: 'sc-count' }, `${d}/${t}`));
+    }),
+    h('button', { class: 'btn small ghost', style: { marginTop: '6px' }, onclick: addSection }, '+ Add section'));
+
+  const main = h('div', { class: 'script-main' }, visible.map((s) => {
+    const [d, t] = scCounts(s);
+    return h('section', { class: 'sc-sec', id: 'ss-' + s.id },
+      h('div', { class: 'sc-sec-h' }, h('h3', { class: 'grow' }, s.title),
+        h('span', { class: 'small-text muted' }, `${d}/${t}`),
+        h('button', { class: 'btn tiny ghost', disabled: !t || d === t, onclick: () => { for (const e of s.entries) e.done = true; scriptCommit(false); } }, 'Check all'),
+        h('button', { class: 'btn tiny ghost', onclick: async () => { const n = await promptText('Rename section', 'Section name', s.title); if (n) { s.title = n; scriptCommit(true); } } }, 'Rename'),
+        h('button', { class: 'btn tiny ghost danger', onclick: async () => {
+          if (await ask(`Delete “${s.title}”?`, `Its ${t} entr${t === 1 ? 'y goes' : 'ies go'} with it.`, 'Delete', true)) { sc.sections.splice(sc.sections.indexOf(s), 1); scriptCommit(true); }
+        } }, 'Delete')),
+      s.entries.map((e) => h('article', { class: `sc-entry ${e.type}` + (e.done ? ' done' : '') + (e === next ? ' next' : ''), id: 'se-' + e.id },
+        h('label', { class: 'sc-check', title: e.done ? 'Done' : 'Mark done' },
+          h('input', { type: 'checkbox', checked: e.done, 'aria-label': `Done: ${e.label || (e.type === 'read' ? 'read-aloud' : 'note')}`, onchange: (ev) => { e.done = ev.target.checked; scriptCommit(false); } })),
+        h('div', { class: 'sc-body' },
+          h('div', { class: 'sc-label' }, e.type === 'read' ? h('span', { class: 'sc-kind' }, 'Read aloud') : null, e.label ? h('b', null, e.label) : null),
+          scBody(e.text)),
+        h('button', { class: 'btn tiny ghost sc-edit', onclick: () => editEntry(s, e) }, 'Edit'))),
+      h('div', { class: 'row', style: { gap: '6px', marginTop: '6px' } },
+        h('button', { class: 'btn tiny ghost', onclick: () => editEntry(s, null).then(() => {}) }, '+ GM note'),
+        h('button', { class: 'btn tiny ghost', onclick: async () => {
+          const t2 = await modal((box, close) => {
+            const ta = h('textarea', { rows: '8', style: { width: '100%' }, autofocus: true });
+            box.classList.add('wide');
+            box.append(h('h3', null, 'New read-aloud'), ta, h('div', { class: 'row end' }, h('button', { class: 'btn ghost', onclick: () => close(null) }, 'Cancel'), h('button', { class: 'btn primary', onclick: () => close(ta.value) }, 'Add')));
+          });
+          if (t2 && t2.trim()) { s.entries.push({ id: 'se' + uid(), type: 'read', label: '', text: t2.trim(), done: false }); scriptCommit(true); }
+        } }, '+ Read-aloud')));
+  }), v.hideDone && visible.length < sc.sections.length ? h('p', { class: 'empty' }, `${sc.sections.length - visible.length} finished section${sc.sections.length - visible.length === 1 ? '' : 's'} hidden.`) : null);
+
+  return h('div', null, head, tools, h('div', { class: 'script' }, side, main));
+}
+
+/* ---------- the pop-out window (#script) ---------- */
+function startScriptWindow() {
+  G.scriptWindow = true;
+  G.S = LS.get('hdoc.gm.state', null);
+  if (G.S) applyTheme(G.S.theme);
+  scriptLoad();
+  document.title = 'Script — ' + ((G.S && G.S.title) || APP.name);
+  window.addEventListener('storage', (e) => {
+    if (document.querySelector('.modal-back') || typing()) return;
+    if (e.key === SCRIPT_KEY) { scriptLoad(); renderScriptWindow(); }
+    if (e.key === 'hdoc.gm.state') { const before = scenarioId(); G.S = LS.get('hdoc.gm.state', null); if (scenarioId() !== before) renderScriptWindow(); }
+  });
+  renderScriptWindow();
+}
+function renderScriptWindow() {
+  const y = window.scrollY;
+  const scName = G.S ? ((G.S.scenarios.find((x) => x.id === G.S.scenario) || {}).name || '') : '';
+  keepFocus(() => appRoot().replaceChildren(h('div', { class: 'wiki-window script-window' },
+    h('header', null, h('h1', null, 'Script', scName ? h('span', { class: 'muted', style: { fontSize: '18px', marginLeft: '12px' } }, scName) : null)),
+    G.S ? secScript() : h('p', { class: 'empty' }, 'Open the GM console in this browser first.'))));
+  window.scrollTo(0, y);
+}
+
+
+
+/* ============================================================
+   Characters: each player character's own little wiki. The pages are ordinary wiki entries
+   (category Characters) that carry which character they belong to (pc) and which page they are.
+   They arrive in GM packs, are edited with the wiki editor, and are searchable from the Wiki.
+   ============================================================ */
+const CHAR_PAGES = ['Overview', 'Backstory', 'People', 'Secrets and truths', 'Threads and open questions', 'At the table', 'Session history', 'Player document'];
+function charList() {
+  const by = new Map();
+  for (const e of G.W.entries) if (e.pc) { if (!by.has(e.pc)) by.set(e.pc, []); by.get(e.pc).push(e); }
+  const order = (G.S && G.S.roster || []).map((r) => r.name.split(' ')[0].toLowerCase());
+  return [...by.entries()].map(([pc, pages]) => {
+    const main = wFind(pc);
+    const name = (pages[0].title.split(' · ')[0]) || (main && main.title) || pc;
+    pages.sort((a, b) => (CHAR_PAGES.indexOf(a.page) + 1 || 99) - (CHAR_PAGES.indexOf(b.page) + 1 || 99) || a.title.localeCompare(b.title));
+    return { pc, name, main, pages };
+  }).sort((a, b) => ((order.indexOf(a.name.split(' ')[0].toLowerCase()) + 1) || 99) - ((order.indexOf(b.name.split(' ')[0].toLowerCase()) + 1) || 99));
+}
+const charView = () => (G.chv = G.chv || { pc: null, page: null, last: null });
+function charFace(c) {
+  const r = (G.S.roster || []).find((x) => x.name.split(' ')[0].toLowerCase() === c.name.split(' ')[0].toLowerCase());
+  return r ? faceEl(r) : h('span', { class: 'face' }, c.name.slice(0, 1));
+}
+function openCharPage(e) {
+  const cv = charView(), v = wv();
+  cv.pc = e.pc; cv.page = e.id; cv.last = e.id; v.id = e.id; v.draft = null; v.hist = [];
+  renderGM(); window.scrollTo(0, 0);
+}
+function secCharacters() {
+  const cv = charView(), v = wv();
+  const chars = charList();
+  const head = secHead('Characters', null, 'Each character’s history, page by page. Only you see it. Edit a page with the wiki editor; it’s searchable from the Wiki too.');
+  if (!chars.length) return h('div', null, head, h('p', { class: 'empty' }, 'No character pages yet. They come in a GM pack: import one under Wiki → Import….'));
+  // A link followed from a character page: another character's page stays here; anything else opens in the Wiki.
+  if (!v.draft && v.id && v.id !== cv.last && G.lastSection === 'characters') {
+    const e = wFind(v.id);
+    if (e && e.pc) { cv.pc = e.pc; cv.page = e.id; cv.last = e.id; }
+    else if (e) { G.section = 'wiki'; return secWiki(); }
+  }
+  let cur = chars.find((c) => c.pc === cv.pc) || chars[0];
+  cv.pc = cur.pc;
+  let page = cur.pages.find((p) => p.id === cv.page) || cur.pages[0];
+  cv.page = page.id;
+  if (!v.draft) { v.id = page.id; cv.last = page.id; }
+  const picker = h('div', { class: 'char-pick', role: 'tablist', 'aria-label': 'Characters' }, chars.map((c) => h('button', {
+    class: 'char-chip' + (c.pc === cur.pc ? ' on' : ''), role: 'tab', 'aria-selected': c.pc === cur.pc ? 'true' : 'false',
+    onclick: () => { const same = c.pages.find((p) => p.page === page.page) || c.pages[0]; openCharPage(same); } }, charFace(c), h('span', null, c.name))));
+  const side = h('nav', { class: 'char-side panel', 'aria-label': `${cur.name}’s pages` },
+    cur.pages.map((p) => h('button', { class: 'sc-nav' + (p.id === page.id ? ' cur' : ''), onclick: () => openCharPage(p) },
+      h('span', { class: 'grow' }, p.page || p.title), p.page === 'Secrets and truths' ? h('span', { class: 'sc-count', title: 'GM secrets' }, 'GM') : null)),
+    cur.main ? h('button', { class: 'btn small ghost', style: { marginTop: '8px' }, onclick: () => { G.section = 'wiki'; wOpen(cur.main.id); } }, `${cur.main.title} in the Wiki`) : null);
+  const editing = v.draft && v.draft.pc;
+  const main = h('div', { class: 'wiki-main' }, editing ? wEditor() : wEntry(page));
+  return h('div', null, head, picker, h('div', { class: 'char-layout' }, side, main));
+}
+
+
 /* ============================================================
    Boot: #gm opens the console, #table the table display,
    anything else the player view.
@@ -5405,6 +5870,7 @@ function renderWikiWindow() {
   window.addEventListener('hashchange', () => location.reload());
   if (hash === 'gm') startGM();
   else if (hash === 'wiki') startWikiWindow();
+  else if (hash === 'script') startScriptWindow();
   else startViewer(hash === 'table' ? 'table' : 'player');
 })();
 
