@@ -548,6 +548,13 @@ button.node-hit:hover{background:color-mix(in srgb, var(--ink) 8%, transparent)}
 .npc-l{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:2px}
 .npc-f-voice .sc-text{border-left:3px solid var(--accent); padding-left:10px}
 .npc-edit-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px} .npc-edit-grid .npc-wide{grid-column:1 / -1}
+.npc-voicecard{background:color-mix(in srgb, var(--accent) 7%, transparent); border-radius:8px; padding:7px 10px}
+.npc-vline{font-weight:600; font-size:14px} .npc-anchor{font-family:var(--font-display); font-size:16px; margin-top:2px}
+.npc-vsum{font-size:12px; color:var(--accent)} .npc-twin{font-size:12px; color:var(--warn,#d9822b); margin-top:4px}
+.npc-edit-grid > *{min-width:0} .npc-edit-grid input, .npc-edit-grid textarea{width:100%; box-sizing:border-box}
+.npc-voice-set{min-width:0; box-sizing:border-box; border:1px solid var(--line); border-radius:var(--radius-s); padding:8px 12px 12px; margin:10px 0}
+.npc-voice-set legend{padding:0 6px; font-weight:700; color:var(--accent)}
+.npc-voice-grid{grid-template-columns:2fr 1fr 1fr} .npc-voice-grid .npc-wide{grid-column:1 / -1}
 .npc-window{max-width:900px} .npc-panel.solo{position:static; max-height:none; overflow:visible; padding:0}
 @media (max-width: 1250px){
   .script.with-npcs{grid-template-columns:minmax(0,1fr) minmax(280px,340px)}
@@ -5894,7 +5901,17 @@ function secCharacters() {
    (or in its own window, #npcs). Kept with the scenario's script in the script store, so it
    is GM only and never sent to players. Cards arrive in GM packs, or you write them here.
    ============================================================ */
-const NPC_FIELDS = [['kind', 'Ancestry, gender, age', 1], ['look', 'Looks', 3], ['motive', 'Motivation', 3], ['voice', 'Performance', 3],
+/* The voice card, from the GM Accent Toolkit: fill it in the first time an NPC speaks so the voice comes back the same. */
+const VOICE_FIELDS = [['accent', 'Accent', 'text', 'e.g. Maine'], ['strength', 'Strength (%)', 'number', '70'], ['pitch', 'Pitch', 'text', 'Low, mid, high'],
+  ['texture', 'Texture', 'text', 'e.g. Breathy, gravel'], ['pace', 'Pace', 'text', 'Slow, measured, fast'], ['memo', 'Voice memo', 'text', 'File name, e.g. innkeeper.m4a'],
+  ['anchor', 'Anchor phrase', 'text', 'A line they say often']];
+const ACCENTS = ['RP', 'Scottish', 'Irish', 'Eastern European', 'Southern US', 'Mid-Atlantic', 'Western US', 'Brooklyn / New York', 'Maine', 'Swedish'];
+const hasVoice = (n) => VOICE_FIELDS.some(([k]) => n[k] != null && String(n[k]).trim());
+function voiceLine(n) {
+  return [n.accent, n.strength !== '' && n.strength != null && String(n.strength).trim() ? String(n.strength).replace(/%$/, '') + '%' : '', n.pitch, n.texture, n.pace]
+    .map((x) => String(x || '').trim()).filter(Boolean).join(' · ');
+}
+const NPC_FIELDS = [['kind', 'Ancestry, gender, age', 1], ['look', 'Looks', 3], ['motive', 'Motivation', 3], ['voice', 'Performance notes', 3],
   ['where', 'Where they are', 2], ['condition', 'Condition', 2], ['wants', 'What they want', 2], ['plot', 'Part in the story', 6]];
 function scRec(id, make) {
   id = id || scenarioId(); let r = G.SC.scripts[id];
@@ -5923,7 +5940,7 @@ function npcCommit() { scriptSave(); rerenderNpcs(); }
 
 async function editNpc(n) {
   const isNew = !n;
-  const d = n ? clone(n) : { id: 'npc' + uid(), name: '', kind: '', look: '', motive: '', voice: '', where: '', condition: '', wants: '', plot: '' };
+  const d = n ? clone(n) : { id: 'npc' + uid(), name: '', kind: '', look: '', motive: '', voice: '', accent: '', strength: '', pitch: '', texture: '', pace: '', anchor: '', memo: '', where: '', condition: '', wants: '', plot: '' };
   const ok = await modal((box, close) => {
     box.classList.add('wide');
     const name = h('input', { type: 'text', value: d.name || '', placeholder: 'Name', autofocus: true });
@@ -5934,8 +5951,18 @@ async function editNpc(n) {
       el.addEventListener('input', () => { d[k] = el.value; });
       return h('label', { class: 'field' + (k === 'plot' ? ' npc-wide' : '') }, h('span', null, lab), el);
     });
+    const dl = h('datalist', { id: 'npc-accents' }, ACCENTS.map((a) => h('option', { value: a })));
+    const vfields = VOICE_FIELDS.map(([k, lab, type, ph]) => {
+      const el = h('input', { type, value: d[k] == null ? '' : d[k], placeholder: ph, list: k === 'accent' ? 'npc-accents' : null, min: type === 'number' ? '0' : null, max: type === 'number' ? '100' : null, step: type === 'number' ? '5' : null });
+      el.addEventListener('input', () => { d[k] = el.value; });
+      return h('label', { class: 'field' + (k === 'anchor' ? ' npc-wide' : '') }, h('span', null, lab), el);
+    });
     box.append(h('h3', null, isNew ? 'New NPC' : 'Edit NPC'),
-      h('div', { class: 'npc-edit-grid' }, h('label', { class: 'field' }, h('span', null, 'Name'), name), ...fields),
+      h('div', { class: 'npc-edit-grid' }, h('label', { class: 'field' }, h('span', null, 'Name'), name), ...fields.slice(0, 4)),
+      h('fieldset', { class: 'npc-voice-set' }, h('legend', null, 'Voice card'), dl,
+        h('p', { class: 'hint', style: { margin: '0 0 8px' } }, 'Fill it in right after their first scene. Give each recurring NPC at least two differences from the others, such as accent plus pitch.'),
+        h('div', { class: 'npc-edit-grid npc-voice-grid' }, ...vfields)),
+      h('div', { class: 'npc-edit-grid' }, ...fields.slice(4)),
       h('p', { class: 'hint' }, '**bold**, *italic*, “- ” for a bullet, and a blank line for a new paragraph.'),
       h('div', { class: 'row', style: { justifyContent: 'space-between' } },
         isNew ? h('span') : h('div', { class: 'row', style: { gap: '6px' } },
@@ -5960,26 +5987,44 @@ async function editNpc(n) {
   npcCommit();
 }
 
-function npcCard(n) {
+function voiceCard(n, twins) {
+  const line = voiceLine(n);
+  return h('div', { class: 'npc-f npc-voicecard' }, h('div', { class: 'npc-l' }, 'Voice card'),
+    hasVoice(n) ? [
+      line ? h('div', { class: 'npc-vline' }, line) : null,
+      n.anchor && String(n.anchor).trim() ? h('div', { class: 'npc-anchor' }, '“' + String(n.anchor).trim().replace(/^["“]|["”]$/g, '') + '”') : null,
+      n.memo && String(n.memo).trim() ? h('div', { class: 'small-text muted' }, 'Voice memo: ' + String(n.memo).trim()) : null,
+    ] : h('div', { class: 'small-text muted' }, 'Not set yet. Fill it in after their first scene so the voice stays the same.'),
+    twins && twins.length ? h('div', { class: 'npc-twin' }, `Same accent as ${twins.join(', ')}. Vary the pitch, texture or pace.`) : null);
+}
+function npcCard(n, twins) {
   const isOpen = npcOpen().has(n.id);
   const body = NPC_FIELDS.filter(([k]) => k !== 'kind' && n[k] && String(n[k]).trim());
+  const iv = body.findIndex(([k]) => k === 'voice'); const at = iv >= 0 ? iv + 1 : Math.min(body.length, body.findIndex(([k]) => k === 'where') < 0 ? body.length : body.findIndex(([k]) => k === 'where'));
   return h('article', { class: 'npc-card' + (isOpen ? ' open' : '') },
     h('button', { class: 'npc-top', 'aria-expanded': String(isOpen), onclick: () => npcSetOpen([n.id], !isOpen) },
       h('span', { class: 'npc-name' }, n.name || 'Unnamed'),
       n.kind ? h('span', { class: 'npc-kind' }, n.kind) : null,
-      !isOpen && n.condition ? h('span', { class: 'npc-sum' }, n.condition) : null),
+      !isOpen && n.condition ? h('span', { class: 'npc-sum' }, n.condition) : null,
+      !isOpen && voiceLine(n) ? h('span', { class: 'npc-vsum' }, voiceLine(n)) : null),
     isOpen ? h('div', { class: 'npc-body' },
-      body.map(([k, lab]) => h('div', { class: 'npc-f npc-f-' + k }, h('div', { class: 'npc-l' }, lab), scBody(n[k]))),
+      body.slice(0, at).map(([k, lab]) => h('div', { class: 'npc-f npc-f-' + k }, h('div', { class: 'npc-l' }, lab), scBody(n[k]))),
+      voiceCard(n, twins),
+      body.slice(at).map(([k, lab]) => h('div', { class: 'npc-f npc-f-' + k }, h('div', { class: 'npc-l' }, lab), scBody(n[k]))),
       h('div', { class: 'row', style: { gap: '6px', marginTop: '8px' } },
         h('button', { class: 'btn tiny ghost', onclick: () => editNpc(n) }, 'Edit'),
         n.wiki && !G.npcWindow && !G.scriptWindow && typeof wOpen === 'function' && wFind(n.wiki)
           ? h('button', { class: 'btn tiny ghost', onclick: () => { G.section = 'wiki'; renderGM(); wOpen(n.wiki); } }, 'Wiki entry') : null)) : null);
 }
+function npcTwins(n, list) {
+  const a = String(n.accent || '').trim().toLowerCase(); if (!a) return [];
+  return list.filter((x) => x !== n && String(x.accent || '').trim().toLowerCase() === a).map((x) => x.name || 'Unnamed');
+}
 function npcPanel(opts) {
   opts = opts || {};
   const list = curNpcs(); const r = scRec();
   const v = (G.npcv = G.npcv || { q: '' }); const q = v.q.trim().toLowerCase();
-  const shown = q ? list.filter((n) => [n.name, n.kind, n.where, n.condition, n.plot].join(' ').toLowerCase().includes(q)) : list;
+  const shown = q ? list.filter((n) => [n.name, n.kind, n.where, n.condition, n.plot, n.accent].join(' ').toLowerCase().includes(q)) : list;
   const open = npcOpen(); const allOpen = shown.length > 0 && shown.every((n) => open.has(n.id));
   const changed = r && r.npcsOrig && (list.some((n) => n.edited) || r.npcsOrig.some((o) => !list.find((n) => n.id === o.id)));
   return h('div', { class: 'npc-inner' },
@@ -5990,7 +6035,7 @@ function npcPanel(opts) {
       opts.closable ? h('button', { class: 'btn tiny ghost', title: 'Hide the NPC panel', onclick: () => { LS.set('hdoc.gm.npcPanel', false); rerenderScript(); } }, 'Hide') : null),
     list.length > 4 ? h('input', { type: 'search', class: 'npc-q', 'data-keep': 'npc-q', placeholder: 'Filter NPCs', 'aria-label': 'Filter NPCs', value: v.q,
       oninput: (e) => { v.q = e.target.value; rerenderNpcs(); } }) : null,
-    list.length ? h('div', { class: 'npc-list' }, shown.length ? shown.map(npcCard) : h('p', { class: 'empty' }, `No NPC matches “${v.q}”.`))
+    list.length ? h('div', { class: 'npc-list' }, shown.length ? shown.map((n) => npcCard(n, npcTwins(n, list))) : h('p', { class: 'empty' }, `No NPC matches “${v.q}”.`))
       : h('p', { class: 'empty' }, 'No NPCs for this scenario yet. A GM pack can bring them in, or you can add one.'),
     h('div', { class: 'row', style: { gap: '6px', flexWrap: 'wrap', marginTop: '8px' } },
       h('button', { class: 'btn tiny ghost', onclick: () => editNpc(null) }, '+ Add NPC'),
